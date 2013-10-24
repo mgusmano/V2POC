@@ -749,6 +749,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "V2POC.com": [
     "com"
   ],
+  "V2POC.profile.Base": [],
   "V2POC.view.Main": [],
   "V2POC.view.Tomatos": [],
   "V2POC.view.project.Project": [],
@@ -1695,6 +1696,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.viewport.Viewport": [],
   "Ext.viewport.WindowsPhone": [],
   "V2POC.com": [],
+  "V2POC.profile.Base": [],
   "V2POC.view.Main": [
     "widget.main"
   ],

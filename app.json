@@ -110,6 +110,32 @@
             "update": "delta"
         },
         {
+            "path": "touch/resources/css/sencha-touch.css",
+            "platform": ["desktop", "firefox", "tizen"],
+            "exclude": ["ie10", "windows"],
+            "theme": "Default",
+            "update": "delta"
+        },
+        {
+            "path": "touch/resources/css/cupertino.css",
+            "platform": ["iosx"],
+            "theme": "ios",
+            "update": "delta"
+        },
+        {
+            "path": "touch/resources/css/cupertino-classic.css",
+            "platform": ["ios-classicx"],
+            "theme": "CupertinoClassic",
+            "update": "delta"
+        },
+        {
+            "path": "touch/resources/css/mountainview.css",
+            "platform": ["androidx"],
+            "theme": "android",
+            "update": "delta"
+        },
+
+        {
             "path": "emspeed-all.css",
             "update": "delta"
         }    ],

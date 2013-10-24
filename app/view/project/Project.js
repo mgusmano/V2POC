@@ -10,6 +10,9 @@ Ext.define('V2POC.view.project.Project', {
     config: {
         listeners: {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                alert('Tablet: ' + Ext.os.is.Tablet);
+                alert('Phone: ' + Ext.os.is.Phone);
+
                 var menu = Ext.create("Ext.Menu", {
                     defaults: {
                         xtype: "button"
