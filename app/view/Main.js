@@ -1,3 +1,4 @@
+//the start
 Ext.define('V2POC.view.Main', {
     extend: 'Ext.tab.Panel',
     xtype: 'main',
