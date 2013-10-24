@@ -2,15 +2,11 @@ Ext.define('V2POC.view.project.Summary', {
     extend: 'Ext.Container',
     xtype: 'summary',
 
-
     initialize: function () {
-        this.create();
-    },
-
-    create: function () {
+        this.items.items[0].setTitle(this.title);
+        this.callParent();
         this.getData();
     },
-
 
     getParams: function () {
         var sParams = {
@@ -45,30 +41,12 @@ Ext.define('V2POC.view.project.Summary', {
 
     config: {
         layout: 'vbox',
-        iconCls: 'void',
         items: [
-             {
-                 xtype: "toolbar",
-                 title: 'Project Summary',
-                 items: [
-                    {
-                        iconCls: "list",
-                        ui: "plain",
-                        left: 0,
-                        listeners: {
-                            tap: function () {
-                                Ext.Viewport.toggleMenu("left");
-                            }
-                        }
-                    }
-                ]
-             },
+            com.getHeader(),
             {
                 xtype: 'container',
                 layout: 'hbox',
                 items: [
-
-
                     {
                         xtype: 'container',
                         id: 'theDataSummary',

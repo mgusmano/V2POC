@@ -1,9 +1,17 @@
 Ext.define('V2POC.view.project.Risks', {
     extend: 'Ext.Container',
     id: 'theRiskMatrix',
+    requires: ['Ext.dataview.DataView'],
     xtype: 'risks',
 
-    requires: ['Ext.dataview.DataView'],
+    initialize: function () {
+        this.items.items[0].setTitle(this.title);
+        this.callParent();
+        //this.getData();
+    },
+
+    create: function () {
+    },
 
     theColors: [
         ['insignificant', 'low', 'low', 'low', 'medium'],
@@ -16,15 +24,6 @@ Ext.define('V2POC.view.project.Risks', {
     clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
     currColor: 'high', //'extreme',
     currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
-
-
-    initialize: function () {
-        this.create();
-    },
-
-    create: function () {
-        //this.getData();
-    },
 
     getData: function () {
         var me = this;
@@ -46,24 +45,8 @@ Ext.define('V2POC.view.project.Risks', {
 
     config: {
         layout: 'vbox',
-        iconCls: 'void',
         items: [
-             {
-                 xtype: "toolbar",
-                 title: 'Risk',
-                 items: [
-                    {
-                        iconCls: "list",
-                        ui: "plain",
-                        left: 0,
-                        listeners: {
-                            tap: function () {
-                                Ext.Viewport.toggleMenu("left");
-                            }
-                        }
-                    }
-                 ]
-             },
+            com.getHeader(),
             {
                 xtype: 'container',
                 layout: 'hbox',

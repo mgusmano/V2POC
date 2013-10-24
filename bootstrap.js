@@ -19,6 +19,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.draw.engine.SvgContext.Gradient": "touch/src/draw/engine/SvgContext.js",
   "V2POC": "app",
   "V2POC.com": "js/com.js",
+  "V2POC.view.camera.Camera": "app/view/camera/camera.js",
   "V2POC.view.requisition.Requisition": "app/view/requisition/requisition.js",
   "V2POC.view.requisition.ViewApprovals": "app/view/requisition/viewapprovals.js",
   "V2POC.view.requisition.ViewRequisitions": "app/view/requisition/viewrequisitions.js"
@@ -752,7 +753,10 @@ Ext.ClassManager.addNameAlternateMappings({
   "V2POC.profile.Base": [],
   "V2POC.view.Main": [],
   "V2POC.view.Tomatos": [],
-  "V2POC.view.project.Project": [],
+  "V2POC.view.base.ChildPanel": [],
+  "V2POC.view.base.MenuButton": [],
+  "V2POC.view.camera.Camera": [],
+  "V2POC.view.misc.Misc": [],
   "V2POC.view.project.Risks": [],
   "V2POC.view.project.Summary": [],
   "V2POC.view.project.Team": [],
@@ -1703,8 +1707,17 @@ Ext.ClassManager.addNameAliasMappings({
   "V2POC.view.Tomatos": [
     "widget.tomatos"
   ],
-  "V2POC.view.project.Project": [
-    "widget.project"
+  "V2POC.view.base.ChildPanel": [
+    "widget.childpanel"
+  ],
+  "V2POC.view.base.MenuButton": [
+    "widget.menubutton"
+  ],
+  "V2POC.view.camera.Camera": [
+    "widget.camera"
+  ],
+  "V2POC.view.misc.Misc": [
+    "widget.misc"
   ],
   "V2POC.view.project.Risks": [
     "widget.risks"

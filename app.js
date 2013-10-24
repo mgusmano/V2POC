@@ -21,13 +21,16 @@ Ext.application({
     views: [
         'Main',
         'Tomatos',
+        'base.MenuButton',
+        'base.ChildPanel',
         'project.Risks',
-        'project.Project',
         'project.Summary',
         'project.Team',
         'requisition.Requisition',
         'requisition.ViewRequisitions',
-        'requisition.ViewApprovals'
+        'requisition.ViewApprovals',
+        'camera.Camera',
+        'misc.Misc'
     ],
 
     icon: {
