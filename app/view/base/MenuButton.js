@@ -1,10 +1,16 @@
 Ext.define('V2POC.view.base.MenuButton', {
     extend: 'Ext.Button',
     xtype: 'menubutton',
-    listeners: {
-        tap: function () {
-            this.targetPanel.setActiveItem(this.panel);
-            Ext.Viewport.hideAllMenus();
+    config: {
+        text: null,
+        targetPanel: null,
+        panel: null,
+        listeners: {
+            tap: function () {
+                var targetPanel = this.getTargetPanel();
+                targetPanel.setActiveItem(this.getPanel());
+                Ext.Viewport.hideAllMenus();
+            }
         }
     }
 });

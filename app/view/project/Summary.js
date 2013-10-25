@@ -3,43 +3,16 @@ Ext.define('V2POC.view.project.Summary', {
     xtype: 'summary',
 
     initialize: function () {
-        this.items.items[0].setTitle(this.title);
-        this.callParent();
+        this.create();
+    },
+
+    create: function () {
+        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
-    getParams: function () {
-        var sParams = {
-            "filter": {
-                "loadAuditInfo": true,
-                "loadBaseAttributes": true,
-                "loadDfxKpis": false,
-                "loadLevelInfo": true,
-                "loadManagement": true,
-                "loadPmtKpis": false,
-                "loadUrls": false,
-                "projectId": 97370,
-                "rollUpThresholdId": 1,
-                "rollUpSubProjectIds": [1]
-            }
-        };
-        return sParams;
-    },
-
-    getData: function () {
-        var me = this;
-        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetProject';
-        var theParms = this.getParams();
-        $.ajax(com.ajaxObject(theUrl, theParms))
-        .done(function (data) {
-            Ext.getCmp('theDataSummary').setData(data);
-        })
-        .fail(function (data) {
-            throw data.status + '-' + data.statusText + ': ' + theUrl;
-        });
-    },
-
     config: {
+        title: null,
         layout: 'vbox',
         items: [
             com.getHeader(),
@@ -80,5 +53,37 @@ Ext.define('V2POC.view.project.Summary', {
                 ]
             }
         ]
+    },
+
+    getParams: function () {
+        var sParams = {
+            "filter": {
+                "loadAuditInfo": true,
+                "loadBaseAttributes": true,
+                "loadDfxKpis": false,
+                "loadLevelInfo": true,
+                "loadManagement": true,
+                "loadPmtKpis": false,
+                "loadUrls": false,
+                "projectId": 97370,
+                "rollUpThresholdId": 1,
+                "rollUpSubProjectIds": [1]
+            }
+        };
+        return sParams;
+    },
+
+    getData: function () {
+        var me = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetProject';
+        var theParms = this.getParams();
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            Ext.getCmp('theDataSummary').setData(data);
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
     }
+
 });

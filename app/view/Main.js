@@ -1,10 +1,10 @@
-//the start
 Ext.define('V2POC.view.Main', {
     extend: 'Ext.tab.Panel',
     xtype: 'main',
     requires: [
         'Ext.TitleBar',
-        'Ext.Video'
+        'Ext.Video',
+        'V2POC.view.base.ChildPanel'
     ],
 
 
@@ -12,118 +12,11 @@ Ext.define('V2POC.view.Main', {
     config: {
         tabBarPosition: 'bottom',
         items: [
-            { xtype: 'childpanel', iconCls: 'organize', title: 'project', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'risks', title: 'Project Risks' }] },
-            { xtype: 'requisition', iconCls: 'star', title: 'requisition' }
-           // { xtype: 'childpanel', iconCls: 'arrow_down', title: 'misc', p: [{ panel: 'camera', title: 'The Camera' }, { panel: 'team', title: 'The Team' }] },
+            { xtype: 'childpanel', iconCls: 'team', title: 'projects', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'risks', title: 'Project Risks' }] },
+            { xtype: 'childpanel', iconCls: 'organize', title: 'requisitions', p: [{ panel: 'viewrequisitions', title: 'View Requisitions' }, { panel: 'viewapprovals', title: 'View Approvals' }] },
+            { xtype: 'childpanel', iconCls: 'favorites', title: 'misc', p: [{ panel: 'camera', title: 'The Camera' }, { panel: 'buttons', title: 'The Buttons' }], id: 'miscID' }
+
             //{ xtype: 'tomatos' },
-
-            //{
-            //    title: 'calendar', iconCls: 'calendar', badgeText: '5',
-            //    items: [
-            //        {
-            //            xtype: 'button',
-            //            text: 'hi',
-            //            width: 200,
-            //            height: 100,
-            //            listeners: {
-            //                tap: function () {
-
-            //                    var ref = window.open('http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx', '_blank', 'location=yes');
-            //                    var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
-            //                    var theParms = { type: 1, projectId: 97370 };
-            //                    var me = this;
-            //                    alert('hi');
-            //                    $.ajax(com.ajaxObject(theUrl, theParms, false))
-            //                    .fail(function (data) { throw data.status + '-' + data.statusText + ': ' + theUrl; })
-            //                    .done(function (data) {
-            //                        alert('severity: ');
-            //                        //alert('severity: ' + data.Matrix[0].severity);
-            //                        Ext.getCmp('actionID').tab.setBadgeText(data.Matrix[0].severity);
-            //                    });
-
-
-            //                }
-            //            }
-
-            //        }
-            //    ]
-            //},
-
-			//{
-			//    title: 'action', iconCls: 'action', id: 'actionID',
-
-			//    layout: 'fit',
-			//    //scrollable: true,
-			//    items: [
-
-
-
-			//		//{ 
-			//		//	xtype: 'dataview',
-			//		//	height: 500,
-			//		//	width: 500,
-			//		//	//fullscreen: true,
-			//		//	//emspeedlayout: 'fit',
-			//		//	store: {
-			//		//		autoLoad: true,
-			//		//		fields: ['id', 'title', 'synopsis',
-			//		//		 {
-			//		//		     name:'thumbnail_image',
-			//		//			 convert: function(v, record) {return record.raw.posters.thumbnail; }
-			//		//		 }
-			//		//		 ],
-			//		//		proxy: {
-			//		//			type: 'jsonp',
-			//		//			// Modify this line with your API key, pretty please...
-			//		//			url: 'http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=hbjgfgryw8tygxztr5wtag3u&q=Horror',
-
-			//		//			reader: {
-			//		//				type: 'json',
-			//		//				rootProperty: 'movies'
-			//		//			}
-			//		//		}
-			//		//	},
-			//		//	itemTpl: '<img src="{thumbnail_image}" /><p>{title}</p><p>{synopsis}</p>'
-			//		//}
-			//    ]
-			//},
-
-
-
-
-            //{
-            //    title: 'add', iconCls: 'add',
-            //    scrollable: true,
-            //    listeners: {
-            //        activate: function () {
-            //            //            debugger;
-            //            //alert('activate add');
-            //            this.down('risks').getData();
-
-            //        }
-            //    },
-
-            //    items: [
-            //        { xtype: 'container', html: '1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>8' },
-            //        { xtype: 'risks' },
-            //        { xtype: 'container', html: '8</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1' },
-            //        { xtype: 'container', html: '1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1</br>1' },
-            //        { xtype: 'container', html: '2' },
-            //        {
-            //            xtype: 'container',
-            //            data: {
-            //                projectId: 'my test value'
-            //            },
-            //            tpl: 'Testing: {projectId}'
-
-
-            //        }
-            //    ]
-            //},
-
-
-
-
 
             //{ title: 'arrow_down', iconCls: 'arrow_down' },
             //{ title: 'arrow_left', iconCls: 'arrow_left' },
@@ -149,8 +42,6 @@ Ext.define('V2POC.view.Main', {
             //{ title: 'time', iconCls: 'time' },
             //{ title: 'user', iconCls: 'user' },
             //{ title: 'team', iconCls: 'team' },	
-
-
 
         ]
     }

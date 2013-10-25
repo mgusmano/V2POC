@@ -1,9 +1,19 @@
 Ext.define('V2POC.view.requisition.ViewApprovals', {
     extend: 'Ext.Panel',
     xtype: 'viewapprovals',
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
+    },
+
     config: {
+        title: null,
         layout: 'vbox',
-        iconCls: 'void',
         items: [
              {
                  xtype: "toolbar",

@@ -51,6 +51,17 @@ Ext.define('V2POC.com', {
                }
             ]
         }
+    },
+
+    whatAmI: function () {
+        var is = '';
+        if (Ext.os.is.Tablet != undefined) {
+            is += Ext.os.is.Tablet + ';';
+        }
+        if (Ext.os.is.Phone != undefined) {
+            is += Ext.os.is.Phone + ';';
+        }
+        return is;
     }
 
 });

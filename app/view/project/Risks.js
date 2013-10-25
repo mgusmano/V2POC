@@ -1,49 +1,23 @@
 Ext.define('V2POC.view.project.Risks', {
     extend: 'Ext.Container',
     id: 'theRiskMatrix',
-    requires: ['Ext.dataview.DataView'],
+    requires: [
+        'Ext.dataview.DataView',
+        'Ext.data.Store'
+    ],
     xtype: 'risks',
 
     initialize: function () {
-        this.items.items[0].setTitle(this.title);
-        this.callParent();
-        //this.getData();
+        this.create();
     },
 
     create: function () {
-    },
-
-    theColors: [
-        ['insignificant', 'low', 'low', 'low', 'medium'],
-        ['low', 'low', 'medium', 'medium', 'high'],
-        ['low', 'medium', 'medium', 'high', 'high'],
-        ['low', 'medium', 'high', 'high', 'extreme'],
-        ['medium', 'high', 'high', 'extreme', 'extreme']
-    ],
-
-    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
-    currColor: 'high', //'extreme',
-    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
-
-    getData: function () {
-        var me = this;
-        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
-        var theParms = { type: 1, projectId: 97370 };
-        $.ajax(com.ajaxObject(theUrl, theParms))
-        .done(function (data) {
-            var storeMatrix = Ext.create('Ext.data.Store', {
-                fields: ['count', 'occurrence', 'severity'],
-                data: data.Matrix
-            });
-            Ext.getCmp('theRiskData').setStore(storeMatrix);
-            //Ext.getCmp('theRiskData').refresh();
-        })
-        .fail(function (data) {
-            throw data.status + '-' + data.statusText + ': ' + theUrl;
-        });
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
     },
 
     config: {
+        title: null,
         layout: 'vbox',
         items: [
             com.getHeader(),
@@ -75,139 +49,139 @@ Ext.define('V2POC.view.project.Risks', {
 
                             //itemTpl: '<div> {severity} {occurrence} {count} </div>',
 
-            //                store: {
-            //                    fields: ['severity', 'occurrence', 'count'],
+                            //                store: {
+                            //                    fields: ['severity', 'occurrence', 'count'],
 
-            //                },
+                            //                },
 
 
-                                data: [
-            {
-                "severity": 1,
-                "occurrence": 1,
-                "count": 9
-            },
-            {
-                "severity": 1,
-                "occurrence": 2,
-                "count": 1
-            },
-            {
-                "severity": 1,
-                "occurrence": 3,
-                "count": 0
-            },
-            {
-                "severity": 1,
-                "occurrence": 4,
-                "count": 0
-            },
-            {
-                "severity": 1,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 2,
-                "occurrence": 1,
-                "count": 3
-            },
-            {
-                "severity": 2,
-                "occurrence": 2,
-                "count": 4
-            },
-            {
-                "severity": 2,
-                "occurrence": 3,
-                "count": 6
-            },
-            {
-                "severity": 2,
-                "occurrence": 4,
-                "count": 4
-            },
-            {
-                "severity": 2,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 3,
-                "occurrence": 1,
-                "count": 15
-            },
-            {
-                "severity": 3,
-                "occurrence": 2,
-                "count": 13
-            },
-            {
-                "severity": 3,
-                "occurrence": 3,
-                "count": 28
-            },
-            {
-                "severity": 3,
-                "occurrence": 4,
-                "count": 3
-            },
-            {
-                "severity": 3,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 4,
-                "occurrence": 1,
-                "count": 7
-            },
-            {
-                "severity": 4,
-                "occurrence": 2,
-                "count": 8
-            },
-            {
-                "severity": 4,
-                "occurrence": 3,
-                "count": 3
-            },
-            {
-                "severity": 4,
-                "occurrence": 4,
-                "count": 2
-            },
-            {
-                "severity": 4,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 5,
-                "occurrence": 1,
-                "count": 7
-            },
-            {
-                "severity": 5,
-                "occurrence": 2,
-                "count": 2
-            },
-            {
-                "severity": 5,
-                "occurrence": 3,
-                "count": 2
-            },
-            {
-                "severity": 5,
-                "occurrence": 4,
-                "count": 0
-            },
-            {
-                "severity": 5,
-                "occurrence": 5,
-                "count": 2
-            }
-                                ],
+                            data: [
+        {
+            "severity": 1,
+            "occurrence": 1,
+            "count": 9
+        },
+        {
+            "severity": 1,
+            "occurrence": 2,
+            "count": 1
+        },
+        {
+            "severity": 1,
+            "occurrence": 3,
+            "count": 0
+        },
+        {
+            "severity": 1,
+            "occurrence": 4,
+            "count": 0
+        },
+        {
+            "severity": 1,
+            "occurrence": 5,
+            "count": 0
+        },
+        {
+            "severity": 2,
+            "occurrence": 1,
+            "count": 3
+        },
+        {
+            "severity": 2,
+            "occurrence": 2,
+            "count": 4
+        },
+        {
+            "severity": 2,
+            "occurrence": 3,
+            "count": 6
+        },
+        {
+            "severity": 2,
+            "occurrence": 4,
+            "count": 4
+        },
+        {
+            "severity": 2,
+            "occurrence": 5,
+            "count": 0
+        },
+        {
+            "severity": 3,
+            "occurrence": 1,
+            "count": 15
+        },
+        {
+            "severity": 3,
+            "occurrence": 2,
+            "count": 13
+        },
+        {
+            "severity": 3,
+            "occurrence": 3,
+            "count": 28
+        },
+        {
+            "severity": 3,
+            "occurrence": 4,
+            "count": 3
+        },
+        {
+            "severity": 3,
+            "occurrence": 5,
+            "count": 0
+        },
+        {
+            "severity": 4,
+            "occurrence": 1,
+            "count": 7
+        },
+        {
+            "severity": 4,
+            "occurrence": 2,
+            "count": 8
+        },
+        {
+            "severity": 4,
+            "occurrence": 3,
+            "count": 3
+        },
+        {
+            "severity": 4,
+            "occurrence": 4,
+            "count": 2
+        },
+        {
+            "severity": 4,
+            "occurrence": 5,
+            "count": 0
+        },
+        {
+            "severity": 5,
+            "occurrence": 1,
+            "count": 7
+        },
+        {
+            "severity": 5,
+            "occurrence": 2,
+            "count": 2
+        },
+        {
+            "severity": 5,
+            "occurrence": 3,
+            "count": 2
+        },
+        {
+            "severity": 5,
+            "occurrence": 4,
+            "count": 0
+        },
+        {
+            "severity": 5,
+            "occurrence": 5,
+            "count": 2
+        }
+                            ],
 
 
                             tpl: new Ext.XTemplate(
@@ -252,7 +226,41 @@ Ext.define('V2POC.view.project.Risks', {
                 ]
             }
         ]
+    },
+
+
+
+
+    theColors: [
+        ['insignificant', 'low', 'low', 'low', 'medium'],
+        ['low', 'low', 'medium', 'medium', 'high'],
+        ['low', 'medium', 'medium', 'high', 'high'],
+        ['low', 'medium', 'high', 'high', 'extreme'],
+        ['medium', 'high', 'high', 'extreme', 'extreme']
+    ],
+
+    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
+    currColor: 'high', //'extreme',
+    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
+
+    getData: function () {
+        var me = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        var theParms = { type: 1, projectId: 97370 };
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            var storeMatrix = Ext.create('Ext.data.Store', {
+                fields: ['count', 'occurrence', 'severity'],
+                data: data.Matrix
+            });
+            Ext.getCmp('theRiskData').setStore(storeMatrix);
+            //Ext.getCmp('theRiskData').refresh();
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
     }
+
 });
 
 $(function () {
