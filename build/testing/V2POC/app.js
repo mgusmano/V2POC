@@ -59386,6 +59386,2387 @@ Ext.define('Ext.data.ArrayStore', {
     // Ext.reg('simplestore', Ext.data.SimpleStore);
 });
 
+/**
+ * @aside video list
+ * @aside guide list
+ *
+ * IndexBar is a component used to display a list of data (primarily an alphabet) which can then be used to quickly
+ * navigate through a list (see {@link Ext.List}) of data. When a user taps on an item in the {@link Ext.IndexBar},
+ * it will fire the {@link #index} event.
+ *
+ * Here is an example of the usage in a {@link Ext.List}:
+ *
+ *     @example phone portrait preview
+ *     Ext.define('Contact', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             fields: ['firstName', 'lastName']
+ *         }
+ *     });
+ *
+ *     var store = new Ext.data.JsonStore({
+ *        model: 'Contact',
+ *        sorters: 'lastName',
+ *
+ *        grouper: {
+ *            groupFn: function(record) {
+ *                return record.get('lastName')[0];
+ *            }
+ *        },
+ *
+ *        data: [
+ *            {firstName: 'Tommy',   lastName: 'Maintz'},
+ *            {firstName: 'Rob',     lastName: 'Dougan'},
+ *            {firstName: 'Ed',      lastName: 'Spencer'},
+ *            {firstName: 'Jamie',   lastName: 'Avins'},
+ *            {firstName: 'Aaron',   lastName: 'Conran'},
+ *            {firstName: 'Dave',    lastName: 'Kaneda'},
+ *            {firstName: 'Jacky',   lastName: 'Nguyen'},
+ *            {firstName: 'Abraham', lastName: 'Elias'},
+ *            {firstName: 'Jay',     lastName: 'Robinson'},
+ *            {firstName: 'Nigel',   lastName: 'White'},
+ *            {firstName: 'Don',     lastName: 'Griffin'},
+ *            {firstName: 'Nico',    lastName: 'Ferrero'},
+ *            {firstName: 'Jason',   lastName: 'Johnston'}
+ *        ]
+ *     });
+ *
+ *     var list = new Ext.List({
+ *        fullscreen: true,
+ *        itemTpl: '<div class="contact">{firstName} <strong>{lastName}</strong></div>',
+ *
+ *        grouped     : true,
+ *        indexBar    : true,
+ *        store: store,
+ *        hideOnMaskTap: false
+ *     });
+ *
+*/
+Ext.define('Ext.dataview.IndexBar', {
+    extend:  Ext.Component ,
+    alternateClassName: 'Ext.IndexBar',
+
+    /**
+     * @event index
+     * Fires when an item in the index bar display has been tapped.
+     * @param {Ext.dataview.IndexBar} this The IndexBar instance
+     * @param {String} html The HTML inside the tapped node.
+     * @param {Ext.dom.Element} target The node on the indexbar that has been tapped.
+     */
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'indexbar',
+
+        /**
+         * @cfg {String} direction
+         * Layout direction, can be either 'vertical' or 'horizontal'
+         * @accessor
+         */
+        direction: 'vertical',
+
+        /**
+         * @cfg {Array} letters
+         * The letters to show on the index bar.
+         * @accessor
+         */
+        letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+
+        ui: 'alphabet',
+
+        /**
+         * @cfg {String} listPrefix
+         * The prefix string to be used at the beginning of the list.
+         * E.g: useful to add a "#" prefix before numbers.
+         * @accessor
+         */
+        listPrefix: null
+    },
+    // @private
+    itemCls: Ext.baseCSSPrefix + '',
+
+    updateDirection: function(newDirection, oldDirection) {
+        var baseCls = this.getBaseCls();
+
+        this.element.replaceCls(baseCls + '-' + oldDirection, baseCls + '-' + newDirection);
+    },
+
+    getElementConfig: function() {
+        return {
+            reference: 'wrapper',
+            classList: ['x-centered', 'x-indexbar-wrapper'],
+            children: [this.callParent()]
+        };
+    },
+
+    updateLetters: function(letters) {
+        this.innerElement.setHtml('');
+
+        if (letters) {
+            var ln = letters.length,
+                i;
+
+            for (i = 0; i < ln; i++) {
+                this.innerElement.createChild({
+                    html: letters[i]
+                });
+            }
+        }
+    },
+
+    updateListPrefix: function(listPrefix) {
+        if (listPrefix && listPrefix.length) {
+            this.innerElement.createChild({
+                html: listPrefix
+            }, 0);
+        }
+    },
+
+    // @private
+    initialize: function() {
+        this.callParent();
+
+        this.innerElement.on({
+            touchstart: this.onTouchStart,
+            dragend: this.onDragEnd,
+            drag: this.onDrag,
+            scope: this
+        });
+    },
+
+    onTouchStart: function(e) {
+        e.stopPropagation();
+        this.innerElement.addCls(this.getBaseCls() + '-pressed');
+        this.pageBox = this.innerElement.getPageBox();
+        this.onDrag(e);
+    },
+
+    // @private
+    onDragEnd: function() {
+        this.innerElement.removeCls(this.getBaseCls() + '-pressed');
+    },
+
+    // @private
+    onDrag: function(e) {
+        var point = Ext.util.Point.fromEvent(e),
+            target,
+            pageBox = this.pageBox;
+
+        if (!pageBox) {
+            pageBox = this.pageBox = this.el.getPageBox();
+        }
+
+        if (this.getDirection() === 'vertical') {
+            if (point.y > pageBox.bottom || point.y < pageBox.top) {
+                return;
+            }
+            target = Ext.Element.fromPoint(pageBox.left + (pageBox.width / 2), point.y);
+        }
+        else {
+            if (point.x > pageBox.right || point.x < pageBox.left) {
+                return;
+            }
+            target = Ext.Element.fromPoint(point.x, pageBox.top + (pageBox.height / 2));
+        }
+
+        if (target) {
+            this.fireEvent('index', this, target.dom.innerHTML, target);
+        }
+    },
+
+    destroy: function() {
+        var me = this,
+            elements = Array.prototype.slice.call(me.innerElement.dom.childNodes),
+            ln = elements.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            Ext.removeNode(elements[i]);
+        }
+        this.callParent();
+    }
+
+}, function() {
+});
+
+/**
+ * @private - To be made a sample
+ */
+Ext.define('Ext.dataview.ListItemHeader', {
+    extend:  Ext.Component ,
+    xtype : 'listitemheader',
+
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'list-header'
+    }
+});
+
+/**
+ * A ListItem is a container for {@link Ext.dataview.List} with 
+ * useSimpleItems: false. 
+ * 
+ * ListItem configures and updates the {@link Ext.data.Model records} for  
+ * the sub-component items in a list. 
+ *   
+ * Overwrite the `updateRecord()` method to set a sub-component's value. 
+ * Sencha Touch calls `updateRecord()` whenever the data in the list updates.
+ *
+ * The `updatedata` event fires after `updateRecord()` runs.
+ *
+ * *Note*: Use of ListItem increases overhead since it generates more markup than
+ * using the List class with useSimpleItems: true. This overhead is more
+ * noticeable in Internet Explorer. If at all possible, use
+ * {@link Ext.dataview.component.SimpleListItem} instead.
+ * 
+ * The following example shows how to configure and update sub-component items
+ * in a list:
+ *
+ *     Ext.define('Twitter.view.TweetListItem', {
+ *         extend: 'Ext.dataview.component.ListItem',
+ *         xtype : 'tweetlistitem',
+ *         requires: [
+ *             'Ext.Img'
+ *         ],
+ *         config: {
+ *             userName: {
+ *                 cls: 'username'
+ *             },
+ *             text: {
+ *                 cls: 'text'
+ *             },
+ *             avatar: {
+ *                 docked: 'left',
+ *                 xtype : 'image',
+ *                 cls   : 'avatar',
+ *                 width: '48px',
+ *                 height: '48px'
+ *             },
+ *             layout: {
+ *                 type: 'vbox'
+ *             }
+ *         },
+ *     
+ *         applyUserName: function(config) {
+ *             return Ext.factory(config, Ext.Component, this.getUserName());
+ *         },
+ *     
+ *         updateUserName: function(newUserName) {
+ *             if (newUserName) {
+ *                 this.insert(0, newUserName);
+ *             }
+ *         },
+ *     
+ *         applyText: function(config) {
+ *             return Ext.factory(config, Twitter.view.TweetListItemText, this.getText());
+ *         },
+ *     
+ *         updateText: function(newText) {
+ *             if (newText) {
+ *                 this.add(newText);
+ *             }
+ *         },
+ *     
+ *         applyAvatar: function(config) {
+ *             return Ext.factory(config, Ext.Img, this.getAvatar());
+ *         },
+ *     
+ *         updateAvatar: function(newAvatar) {
+ *             if (newAvatar) {
+ *                 this.add(newAvatar);
+ *             }
+ *         },
+ *     
+ *         updateRecord: function(record) {     
+ *             if (!record) {
+ *                 return;
+ *             }
+ *
+ *             this.getUserName().setHtml(record.get('username'));
+ *             this.getText().setHtml(record.get('text'));
+ *             this.getAvatar().setSrc(record.get('avatar_url'));
+ *             this.callParent(arguments);
+ *
+ *         }
+ *     });
+ *
+ */
+Ext.define('Ext.dataview.component.ListItem', {
+    extend:  Ext.dataview.component.DataItem ,
+    xtype : 'listitem',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'list-item',
+
+        dataMap: null,
+
+        body: {
+            xtype: 'component',
+            cls: 'x-list-item-body'
+        },
+
+        disclosure: {
+            xtype: 'component',
+            cls: 'x-list-disclosure',
+            hidden: true,
+            docked: 'right'
+        },
+
+        header: {
+            xtype: 'component',
+            cls: 'x-list-header',
+            html: ' '
+        },
+
+        tpl: null,
+        items: null
+    },
+
+    applyBody: function(body) {
+        if (body && !body.isComponent) {
+            body = Ext.factory(body, Ext.Component, this.getBody());
+        }
+        return body;
+    },
+
+    updateBody: function(body, oldBody) {
+        if (body) {
+            this.add(body);
+        } else if (oldBody) {
+            oldBody.destroy();
+        }
+    },
+
+    applyHeader: function(header) {
+        if (header && !header.isComponent) {
+            header = Ext.factory(header, Ext.Component, this.getHeader());
+        }
+        return header;
+    },
+
+    updateHeader: function(header, oldHeader) {
+        if (oldHeader) {
+            oldHeader.destroy();
+        }
+    },
+
+    applyDisclosure: function(disclosure) {
+        if (disclosure && !disclosure.isComponent) {
+            disclosure = Ext.factory(disclosure, Ext.Component, this.getDisclosure());
+        }
+        return disclosure;
+    },
+
+    updateDisclosure: function(disclosure, oldDisclosure) {
+        if (disclosure) {
+            this.add(disclosure);
+        } else if (oldDisclosure) {
+            oldDisclosure.destroy();
+        }
+    },
+
+    updateTpl: function(tpl) {
+        this.getBody().setTpl(tpl);
+    },
+
+    updateRecord: function(record) {
+        var me = this,
+            dataview = me.dataview || this.getDataview(),
+            data = record && dataview.prepareData(record.getData(true), dataview.getStore().indexOf(record), record),
+            dataMap = me.getDataMap(),
+            body = this.getBody(),
+            disclosure = this.getDisclosure();
+
+        me._record = record;
+
+        if (dataMap) {
+            me.doMapData(dataMap, data, body);
+        } else if (body) {
+            body.updateData(data || null);
+        }
+
+        if (disclosure && record && dataview.getOnItemDisclosure()) {
+            var disclosureProperty = dataview.getDisclosureProperty();
+            disclosure[(data.hasOwnProperty(disclosureProperty) && data[disclosureProperty] === false) ? 'hide' : 'show']();
+        }
+
+        /**
+         * @event updatedata
+         * Fires whenever the data of the DataItem is updated.
+         * @param {Ext.dataview.component.DataItem} this The DataItem instance.
+         * @param {Object} newData The new data.
+         */
+        me.fireEvent('updatedata', me, data);
+    },
+
+    destroy: function() {
+        Ext.destroy(this.getHeader());
+        this.callParent(arguments);
+    }
+});
+
+/**
+ * A SimpleListItem is a simplified list item that is used by {@link Ext.dataview.List} when
+ * useSimpleItems is set to true.  It supports disclosure icons and headers and generates the
+ * slimmest markup possible to achieve this. It doesn't support container functionality like adding
+ * or docking items. If you require those features you should have your list use
+ * {@link Ext.dataview.component.ListItem} instances.
+ */
+Ext.define('Ext.dataview.component.SimpleListItem', {
+    extend:  Ext.Component ,
+    xtype : 'simplelistitem',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'list-item',
+
+        disclosure: {
+            xtype: 'component',
+            cls: 'x-list-disclosure',
+            hidden: true
+        },
+
+        header: {
+            xtype: 'component',
+            cls: 'x-list-header',
+            html: ' '
+        },
+
+        /*
+         * @private dataview
+         */
+        dataview: null,
+
+        /**
+         * @cfg {Ext.data.Model} record The model instance of this ListTplItem. It is controlled by the List.
+         * @accessor
+         */
+        record: null
+    },
+
+    initialize: function() {
+        this.element.addCls(this.getBaseCls() + '-tpl');
+    },
+
+    applyHeader: function(header) {
+        if (header && !header.isComponent) {
+            header = Ext.factory(header, Ext.Component, this.getHeader());
+        }
+        return header;
+    },
+
+    updateHeader: function(header, oldHeader) {
+        if (oldHeader) {
+            oldHeader.destroy();
+        }
+    },
+
+    applyDisclosure: function(disclosure) {
+        if (disclosure && !disclosure.isComponent) {
+            disclosure = Ext.factory(disclosure, Ext.Component, this.getDisclosure());
+        }
+        return disclosure;
+    },
+
+    updateDisclosure: function(disclosure, oldDisclosure) {
+        if (disclosure) {
+            this.element.appendChild(disclosure.renderElement);
+        } else if (oldDisclosure) {
+            oldDisclosure.destroy();
+        }
+    },
+
+    updateRecord: function(record) {
+        var me = this,
+            dataview = me.dataview || this.getDataview(),
+            data = record && dataview.prepareData(record.getData(true), dataview.getStore().indexOf(record), record),
+            disclosure = this.getDisclosure();
+
+        me.updateData(data || null);
+
+        if (disclosure && record && dataview.getOnItemDisclosure()) {
+            var disclosureProperty = dataview.getDisclosureProperty();
+            disclosure[(data.hasOwnProperty(disclosureProperty) && data[disclosureProperty] === false) ? 'hide' : 'show']();
+        }
+
+        /**
+         * @event updatedata
+         * Fires whenever the data of the DataItem is updated.
+         * @param {Ext.dataview.component.DataItem} this The DataItem instance.
+         * @param {Object} newData The new data.
+         */
+        me.fireEvent('updatedata', me, data);
+    },
+
+    destroy: function() {
+        Ext.destroy(this.getHeader(), this.getDisclosure());
+        this.callParent(arguments);
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.util.PositionMap', {
+    config: {
+        minimumHeight: 50
+    },
+
+    constructor: function(config) {
+        this.map = [];
+        this.adjustments = {};
+        this.offset = 0;
+
+        this.initConfig(config);
+    },
+
+    populate: function(count, offset) {
+        var map = this.map = this.map || [],
+            minimumHeight = this.getMinimumHeight(),
+            i, previousIndex, ln;
+
+        offset = offset || 0;
+
+        // We add 1 item to the count so that we can get the height of the bottom item
+        count++;
+        map.length = count;
+
+        map[0] = 0;
+        for (i = offset + 1, ln = count - 1; i <= ln; i++) {
+            previousIndex = i - 1;
+            map[i] = map[previousIndex] + minimumHeight;
+        }
+
+        this.adjustments = {
+            indices: [],
+            heights: {}
+        };
+        this.offset = 0;
+        for (i = 1, ln = count - 1; i <= ln; i++) {
+            previousIndex = i - 1;
+            this.offset += map[i] - map[previousIndex] - minimumHeight;
+        }
+    },
+
+    setItemHeight: function(index, height) {
+        height = Math.max(height, this.getMinimumHeight());
+        if (height !== this.getItemHeight(index)) {
+            var adjustments = this.adjustments;
+            adjustments.indices.push(parseInt(index, 10));
+            adjustments.heights[index] = height;
+        }
+    },
+
+    update: function() {
+        var adjustments = this.adjustments,
+            indices = adjustments.indices,
+            heights = adjustments.heights,
+            map = this.map,
+            ln = indices.length,
+            minimumHeight = this.getMinimumHeight(),
+            difference = 0,
+            i, j, height, index, nextIndex, currentHeight;
+
+        if (!adjustments.indices.length) {
+            return false;
+        }
+
+        Ext.Array.sort(indices, function(a, b) {
+            return a - b;
+        });
+
+        for (i = 0; i < ln; i++) {
+            index = indices[i];
+            nextIndex = indices[i + 1] || map.length - 1;
+
+            currentHeight = (map[index + 1] !== undefined) ? (map[index + 1] - map[index] + difference) : minimumHeight;
+            height = heights[index];
+
+            difference += height - currentHeight;
+
+            for (j = index + 1; j <= nextIndex; j++) {
+                map[j] += difference;
+            }
+        }
+
+        this.offset += difference;
+        this.adjustments = {
+            indices: [],
+            heights: {}
+        };
+        return true;
+    },
+
+    getItemHeight: function(index) {
+        return this.map[index + 1] - this.map[index];
+    },
+
+    getTotalHeight: function() {
+        return ((this.map.length - 1) * this.getMinimumHeight()) + this.offset;
+    },
+
+    findIndex: function(pos) {
+        return this.map.length ? this.binarySearch(this.map, pos) : 0;
+    },
+
+    binarySearch: function(sorted, value) {
+        var start = 0,
+            end = sorted.length;
+
+        if (value < sorted[0]) {
+            return 0;
+        }
+        if (value > sorted[end - 1]) {
+            return end - 1;
+        }
+        while (start + 1 < end) {
+            var mid = (start + end) >> 1,
+                val = sorted[mid];
+            if (val == value) {
+                return mid;
+            } else if (val < value) {
+                start = mid;
+            } else {
+                end = mid;
+            }
+        }
+        return start;
+    }
+});
+
+/**
+ * @aside guide list
+ * @aside video list
+ *
+ * List is a custom styled DataView which allows Grouping, Indexing, Icons, and a Disclosure. See the
+ * [Guide](#!/guide/list) and [Video](#!/video/list) for more.
+ *
+ *     @example miniphone preview
+ *     Ext.create('Ext.List', {
+ *         fullscreen: true,
+ *         itemTpl: '{title}',
+ *         data: [
+ *             { title: 'Item 1' },
+ *             { title: 'Item 2' },
+ *             { title: 'Item 3' },
+ *             { title: 'Item 4' }
+ *         ]
+ *     });
+ *
+ * A more advanced example showing a list of people grouped by last name:
+ *
+ *     @example miniphone preview
+ *     Ext.define('Contact', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             fields: ['firstName', 'lastName']
+ *         }
+ *     });
+ *
+ *     var store = Ext.create('Ext.data.Store', {
+ *        model: 'Contact',
+ *        sorters: 'lastName',
+ *
+ *        grouper: {
+ *            groupFn: function(record) {
+ *                return record.get('lastName')[0];
+ *            }
+ *        },
+ *
+ *        data: [
+ *            { firstName: 'Tommy',   lastName: 'Maintz'  },
+ *            { firstName: 'Rob',     lastName: 'Dougan'  },
+ *            { firstName: 'Ed',      lastName: 'Spencer' },
+ *            { firstName: 'Jamie',   lastName: 'Avins'   },
+ *            { firstName: 'Aaron',   lastName: 'Conran'  },
+ *            { firstName: 'Dave',    lastName: 'Kaneda'  },
+ *            { firstName: 'Jacky',   lastName: 'Nguyen'  },
+ *            { firstName: 'Abraham', lastName: 'Elias'   },
+ *            { firstName: 'Jay',     lastName: 'Robinson'},
+ *            { firstName: 'Nigel',   lastName: 'White'   },
+ *            { firstName: 'Don',     lastName: 'Griffin' },
+ *            { firstName: 'Nico',    lastName: 'Ferrero' },
+ *            { firstName: 'Jason',   lastName: 'Johnston'}
+ *        ]
+ *     });
+ *
+ *     Ext.create('Ext.List', {
+ *        fullscreen: true,
+ *        itemTpl: '<div class="contact">{firstName} <strong>{lastName}</strong></div>',
+ *        store: store,
+ *        grouped: true
+ *     });
+ *
+ * If you want to dock items to the bottom or top of a List, you can use the scrollDock configuration on child items in this List. The following example adds a button to the bottom of the List.
+ *
+ *     @example phone preview
+ *     Ext.define('Contact', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             fields: ['firstName', 'lastName']
+ *         }
+ *     });
+ *
+ *     var store = Ext.create('Ext.data.Store', {
+ *        model: 'Contact',
+ *        sorters: 'lastName',
+ *
+ *        grouper: {
+ *            groupFn: function(record) {
+ *                return record.get('lastName')[0];
+ *            }
+ *        },
+ *
+ *        data: [
+ *            { firstName: 'Tommy',   lastName: 'Maintz'  },
+ *            { firstName: 'Rob',     lastName: 'Dougan'  },
+ *            { firstName: 'Ed',      lastName: 'Spencer' },
+ *            { firstName: 'Jamie',   lastName: 'Avins'   },
+ *            { firstName: 'Aaron',   lastName: 'Conran'  },
+ *            { firstName: 'Dave',    lastName: 'Kaneda'  },
+ *            { firstName: 'Jacky',   lastName: 'Nguyen'  },
+ *            { firstName: 'Abraham', lastName: 'Elias'   },
+ *            { firstName: 'Jay',     lastName: 'Robinson'},
+ *            { firstName: 'Nigel',   lastName: 'White'   },
+ *            { firstName: 'Don',     lastName: 'Griffin' },
+ *            { firstName: 'Nico',    lastName: 'Ferrero' },
+ *            { firstName: 'Jason',   lastName: 'Johnston'}
+ *        ]
+ *     });
+ *
+ *     Ext.create('Ext.List', {
+ *         fullscreen: true,
+ *         itemTpl: '<div class="contact">{firstName} <strong>{lastName}</strong></div>',
+ *         store: store,
+ *         items: [{
+ *             xtype: 'button',
+ *             scrollDock: 'bottom',
+ *             docked: 'bottom',
+ *             text: 'Load More...'
+ *         }]
+ *     });
+ */
+Ext.define('Ext.dataview.List', {
+    alternateClassName: 'Ext.List',
+    extend:  Ext.dataview.DataView ,
+    xtype: 'list',
+
+    mixins: [ Ext.mixin.Bindable ],
+
+               
+                         
+                                
+                                      
+                                          
+                                                
+                              
+      
+
+    /**
+     * @event disclose
+     * @preventable doDisclose
+     * Fires whenever a disclosure is handled
+     * @param {Ext.dataview.List} this The List instance
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {HTMLElement} target The element disclosed
+     * @param {Number} index The index of the item disclosed
+     * @param {Ext.EventObject} e The event object
+     */
+
+    config: {
+        /**
+         * @cfg layout
+         * Hide layout config in DataView. It only causes confusion.
+         * @accessor
+         * @private
+         */
+        layout: 'fit',
+
+        /**
+         * @cfg {Boolean/Object} indexBar
+         * `true` to render an alphabet IndexBar docked on the right.
+         * This can also be a config object that will be passed to {@link Ext.IndexBar}.
+         * @accessor
+         */
+        indexBar: false,
+
+        icon: null,
+
+        /**
+         * @cfg {Boolean} preventSelectionOnDisclose `true` to prevent the item selection when the user
+         * taps a disclose icon.
+         * @accessor
+         */
+        preventSelectionOnDisclose: true,
+
+        /**
+         * @cfg baseCls
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'list',
+
+        /**
+         * @cfg {Boolean} pinHeaders
+         * Whether or not to pin headers on top of item groups while scrolling for an iPhone native list experience.
+         * @accessor
+         */
+        pinHeaders: true,
+
+        /**
+         * @cfg {Boolean} grouped
+         * Whether or not to group items in the provided Store with a header for each item.
+         * @accessor
+         */
+        grouped: false,
+
+        /**
+         * @cfg {Boolean/Function/Object} onItemDisclosure
+         * `true` to display a disclosure icon on each list item.
+         * The list will still fire the disclose event, and the event can be stopped before itemtap.
+         * By setting this config to a function, the function passed will be called when the disclosure
+         * is tapped.
+         * Finally you can specify an object with a 'scope' and 'handler'
+         * property defined. This will also be bound to the tap event listener
+         * and is useful when you want to change the scope of the handler.
+         * @accessor
+         */
+        onItemDisclosure: null,
+
+        /**
+         * @cfg {String} disclosureProperty
+         * A property to check on each record to display the disclosure on a per record basis.  This
+         * property must be false to prevent the disclosure from being displayed on the item.
+         * @accessor
+         */
+        disclosureProperty: 'disclosure',
+
+        /**
+         * @cfg {String} ui
+         * The style of this list. Available options are `normal` and `round`.
+         * Please note: if you use the `round` UI, {@link #pinHeaders} will be automatically turned off as
+         * it is not supported.
+         */
+        ui: 'normal',
+
+        /**
+         * @cfg {Boolean} useComponents
+         * Flag the use a component based DataView implementation.  This allows the full use of components in the
+         * DataView at the cost of some performance.
+         *
+         * Checkout the [DataView Guide](#!/guide/dataview) for more information on using this configuration.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {Object} itemConfig
+         * A configuration object that is passed to every item created by a component based DataView. Because each
+         * item that a List renders is a Component, we can pass configuration options to each component to
+         * easily customize how each child component behaves.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {Number} maxItemCache
+         * Maintains a cache of reusable components when using a component based DataView.  Improving performance at
+         * the cost of memory.
+         * Note this is currently only used when useComponents is true.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {String} defaultType
+         * The xtype used for the component based DataView. Defaults to dataitem.
+         * Note this is only used when useComponents is true.
+         * @accessor
+         */
+        defaultType: undefined,
+
+        /**
+         * @cfg {Object} itemMap
+         * @private
+         */
+        itemMap: {},
+
+        /**
+         * @cfg {Number} itemHeight
+         * This allows you to set the default item height and is used to roughly calculate the amount
+         * of items needed to fill the list. By default items are around 50px high.
+         */
+        itemHeight: 42,
+
+        /**
+         * @cfg {Boolean} variableHeights
+         * This configuration allows you optimize the list by not having it read the DOM heights of list items.
+         * Instead it will assume (and set) the height to be the {@link #itemHeight}.
+         */
+        variableHeights: false,
+
+        /**
+         * @cfg {Boolean} refreshHeightOnUpdate
+         * Set this to false if you make many updates to your list (like in an interval), but updates
+         * won't affect the item's height. Doing this will increase the performance of these updates.
+         */
+        refreshHeightOnUpdate: true,
+
+        /**
+         * @cfg {Boolean} infinite
+         * Set this to false to render all items in this list, and render them relatively.
+         * Note that this configuration can not be dynamically changed after the list has instantiated.
+         */
+        infinite: false,
+
+        /**
+         * @cfg {Boolean} useSimpleItems
+         * Set this to true if you just want to have the list create simple items that use the itemTpl.
+         * These simple items still support headers, grouping and disclosure functionality but avoid
+         * container layouts and deeply nested markup. For many Lists using this configuration will
+         * drastically increase the scrolling and render performance.
+         */
+        useSimpleItems: true,
+
+        /**
+         * @cfg {Object} scrollable
+         * @private
+         */
+        scrollable: null,
+
+        /**
+         * The amount of items we render additionaly besides the ones currently visible.
+         * We try to prevent the rendering of items while scrolling until the next time you stop scrolling.
+         * If you scroll close to the end of the buffer, we start rendering individual items to always
+         * have the {@link #minimumBufferSize} prepared.
+         * @type {Number}
+         */
+        bufferSize: 20,
+
+        minimumBufferDistance: 5,
+
+        useHeaders: true,
+
+        /**
+         * @cfg {Boolean} striped
+         * Set this to true if you want the items in the list to be zebra striped, alternating their
+         * background color.
+         */
+        striped: false
+    },
+
+    platformConfig: [
+        {
+            theme: ['Windows'],
+            itemHeight: 44
+        },
+        {
+            theme: ['Cupertino'],
+            itemHeight: 43
+        }
+    ],
+
+    topRenderedIndex: 0,
+    topVisibleIndex: 0,
+    visibleCount: 0,
+
+    constructor: function() {
+        var me = this, layout;
+
+        me.callParent(arguments);
+
+        layout = this.getLayout();
+        if (layout && !layout.isFit) {
+            Ext.Logger.error('The base layout for a DataView must always be a Fit Layout');
+        }
+    },
+
+    // We create complex instance arrays and objects in beforeInitialize so that we can use these inside of the initConfig process.
+    beforeInitialize: function() {
+        var me = this,
+            container = me.container,
+            scrollable, scrollViewElement, pinnedHeader;
+
+        Ext.apply(me, {
+            listItems: [],
+            headerItems: [],
+            updatedItems: [],
+            headerMap: [],
+            scrollDockItems: {
+                top: [],
+                bottom: []
+            }
+        });
+
+        // We determine the translation methods for headers and items within this List based
+        // on the best strategy for the device
+        this.translationMethod = Ext.browser.is.AndroidStock2 ? 'cssposition' : 'csstransform';
+
+        // Create the inner container that will actually hold all the list items
+        if (!container) {
+            container = me.container = Ext.factory({
+                xtype: 'container',
+                scrollable: {
+                    scroller: {
+                        autoRefresh: !me.getInfinite(),
+                        direction: 'vertical'
+                    }
+                }
+            });
+        }
+
+        // We add the container after creating it manually because when you add the container,
+        // the items config is initialized. When this happens, any scrollDock items will be added,
+        // which in turn tries to add these items to the container
+        me.add(container);
+
+        // We make this List's scrollable the inner containers scrollable
+        scrollable = container.getScrollable();
+        scrollViewElement = me.scrollViewElement = scrollable.getElement();
+        me.scrollElement = scrollable.getScroller().getElement();
+
+        me.setScrollable(scrollable);
+        me.scrollableBehavior = container.getScrollableBehavior();
+
+        // Create the pinnedHeader instance thats being used when grouping is enabled
+        // and insert it into the scrollElement
+        pinnedHeader = me.pinnedHeader = Ext.factory({
+            xtype: 'listitemheader',
+            html: '&nbsp;',
+            translatable: {
+                translationMethod: this.translationMethod
+            },
+            cls: ['x-list-header', 'x-list-header-swap']
+        });
+        pinnedHeader.translate(0, -10000);
+        pinnedHeader.$position = -10000;
+        scrollViewElement.insertFirst(pinnedHeader.renderElement);
+
+        // We want to intercept any translate calls made on the scroller to perform specific list logic
+        me.bind(scrollable.getScroller().getTranslatable(), 'doTranslate', 'onTranslate');
+    },
+
+    // We override DataView's initialize method with an empty function
+    initialize: function() {
+        var me = this,
+            container = me.container,
+            scrollViewElement = me.scrollViewElement,
+            indexBar = me.getIndexBar(),
+            triggerEvent = me.getTriggerEvent(),
+            triggerCtEvent = me.getTriggerCtEvent();
+
+        if (indexBar) {
+            scrollViewElement.appendChild(indexBar.renderElement);
+        }
+
+        if (triggerEvent) {
+            me.on(triggerEvent, me.onItemTrigger, me);
+        }
+        if (triggerCtEvent) {
+            me.on(triggerCtEvent, me.onContainerTrigger, me);
+        }
+
+        container.element.on({
+            delegate: '.' + me.getBaseCls() + '-disclosure',
+            tap: 'handleItemDisclosure',
+            scope: me
+        });
+
+        container.element.on({
+            resize: 'onContainerResize',
+            scope: me
+        });
+
+        // Android 2.x not a direct child
+        container.innerElement.on({
+            touchstart: 'onItemTouchStart',
+            touchend: 'onItemTouchEnd',
+            tap: 'onItemTap',
+            taphold: 'onItemTapHold',
+            singletap: 'onItemSingleTap',
+            doubletap: 'onItemDoubleTap',
+            swipe: 'onItemSwipe',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item',
+            scope: me
+        });
+
+        if (me.getStore()) {
+            me.refresh();
+        }
+    },
+
+    onTranslate: function(x, y) {
+        var me = this,
+            pinnedHeader = me.pinnedHeader,
+            store = me.getStore(),
+            storeCount = store && store.getCount(),
+            grouped = me.getGrouped(),
+            infinite = me.getInfinite();
+
+        if (!storeCount) {
+            me.showEmptyText();
+            me.showEmptyScrollDock();
+
+            pinnedHeader.$position = -10000;
+            pinnedHeader.translate(0, -10000);
+        }
+        else if (infinite && me.itemsCount) {
+            me.handleItemUpdates(y);
+            me.handleItemHeights();
+            me.handleItemTransforms();
+
+            if (!me.onIdleBound) {
+                Ext.AnimationQueue.onIdle(me.onAnimationIdle, me);
+                me.onIdleBound = true;
+            }
+        }
+
+        if (grouped && me.groups && me.groups.length && me.getPinHeaders()) {
+            me.handlePinnedHeader(y);
+        }
+
+        // This is a template method that can be intercepted by plugins to do things when scrolling
+        this.onScrollBinder(x, y);
+    },
+
+    onScrollBinder: function(){},
+
+    handleItemUpdates: function(y) {
+        var me = this,
+            listItems = me.listItems,
+            itemsCount = listItems.length,
+            info = me.getListItemInfo(),
+            itemMap = me.getItemMap(),
+            bufferSize = me.getBufferSize(),
+            lastIndex = me.getStore().getCount() - 1,
+            minimumBufferDistance = me.getMinimumBufferDistance(),
+            currentTopVisibleIndex = me.topVisibleIndex,
+            topRenderedIndex = me.topRenderedIndex,
+            updateCount, i, item, topVisibleIndex, bufferDistance, itemIndex;
+
+        // This is the index of the item that is currently visible at the top
+        me.topVisibleIndex = topVisibleIndex = Math.max(0, itemMap.findIndex(-y) || 0);
+
+        if (currentTopVisibleIndex !== topVisibleIndex) {
+            // When we are scrolling up
+            if (currentTopVisibleIndex > topVisibleIndex) {
+                bufferDistance = topVisibleIndex - topRenderedIndex;
+                if (bufferDistance < minimumBufferDistance) {
+                    updateCount = Math.min(itemsCount, minimumBufferDistance - bufferDistance);
+
+                    if (updateCount == itemsCount) {
+                        me.topRenderedIndex = topRenderedIndex = Math.max(0, topVisibleIndex - (bufferSize - minimumBufferDistance));
+                        // Update all
+                        for (i = 0; i < updateCount; i++) {
+                            itemIndex = topRenderedIndex + i;
+                            item = listItems[i];
+                            me.updateListItem(item, itemIndex, info);
+                        }
+                    }
+                    else {
+                        for (i = 0; i < updateCount; i++) {
+                            itemIndex = topRenderedIndex - i - 1;
+                            if (itemIndex < 0) {
+                                break;
+                            }
+
+                            item = listItems.pop();
+                            listItems.unshift(item);
+                            me.updateListItem(item, itemIndex, info);
+                            me.topRenderedIndex--;
+                        }
+                    }
+                }
+            }
+            // When we are scrolling down
+            else {
+                bufferDistance = bufferSize - (topVisibleIndex - topRenderedIndex);
+
+                if (bufferDistance < minimumBufferDistance) {
+                    updateCount = Math.min(itemsCount, minimumBufferDistance - bufferDistance);
+
+                    if (updateCount == itemsCount) {
+                        me.topRenderedIndex = topRenderedIndex = Math.min(lastIndex - itemsCount, topVisibleIndex - minimumBufferDistance);
+                        // Update all
+                        for (i = 0; i < updateCount; i++) {
+                            itemIndex = topRenderedIndex + i;
+                            item = listItems[i];
+                            me.updateListItem(item, itemIndex, info);
+                        }
+                    }
+                    else {
+                        for (i = 0; i < updateCount; i++) {
+                            itemIndex = topRenderedIndex + itemsCount + i;
+                            if (itemIndex > lastIndex) {
+                                break;
+                            }
+
+                            item = listItems.shift();
+                            listItems.push(item);
+                            me.updateListItem(item, itemIndex, info);
+                            me.topRenderedIndex++;
+                        }
+                    }
+                }
+            }
+        }
+    },
+
+    onAnimationIdle: function() {
+        var me = this,
+            info = me.getListItemInfo(),
+            bufferSize = me.getBufferSize(),
+            topVisibleIndex = me.topVisibleIndex,
+            topRenderedIndex = me.topRenderedIndex,
+            lastIndex = me.getStore().getCount() - 1,
+            listItems = me.listItems,
+            itemsCount = listItems.length,
+            topBufferDistance, bottomBufferDistance,
+            i, ln, item, itemIndex;
+
+        topBufferDistance = topVisibleIndex - topRenderedIndex;
+        bottomBufferDistance = topRenderedIndex + bufferSize - topVisibleIndex;
+
+        if (topBufferDistance < bottomBufferDistance) {
+            // This means there are more items below the visible list. The user
+            // has probably just scrolled up. In this case we move some items
+            // from the bottom to the top only if the list is scrolled down a bit
+            if (topVisibleIndex > 0) {
+                ln = bottomBufferDistance - topBufferDistance;
+
+                for (i = 0; i < ln; i++) {
+                    itemIndex = topRenderedIndex - i - 1;
+                    if (itemIndex < 0) {
+                        break;
+                    }
+
+                    item = listItems.pop();
+                    listItems.unshift(item);
+                    me.updateListItem(item, itemIndex, info);
+                    me.topRenderedIndex--;
+                }
+            }
+        }
+        else {
+            ln = topBufferDistance - bottomBufferDistance;
+            for (i = 0; i < ln; i++) {
+                itemIndex = topRenderedIndex + itemsCount + i;
+                if (itemIndex > lastIndex) {
+                    break;
+                }
+
+                item = listItems.shift();
+                listItems.push(item);
+                me.updateListItem(item, itemIndex, info);
+                me.topRenderedIndex++;
+            }
+        }
+
+        me.handleItemHeights();
+        me.handleItemTransforms();
+
+        me.onIdleBound = false;
+    },
+
+    handleItemHeights: function() {
+        var me = this,
+            updatedItems = me.updatedItems,
+            ln = updatedItems.length,
+            itemMap = me.getItemMap(),
+            useSimpleItems = me.getUseSimpleItems(),
+            minimumHeight = itemMap.getMinimumHeight(),
+            headerIndices = me.headerIndices,
+            headerMap = me.headerMap,
+            variableHeights = me.getVariableHeights(),
+            itemIndex, i, j, jln, item, height, scrollDockHeight;
+
+        for (i = 0; i < ln; i++) {
+            item = updatedItems[i];
+            itemIndex = item.$dataIndex;
+
+            // itemIndex may not be set yet if the store is still being loaded
+            if (itemIndex !== null) {
+                if (variableHeights) {
+                    height = useSimpleItems ? item.element.getHeight() : item.element.getFirstChild().getHeight();
+                    height = Math.max(height, minimumHeight);
+                } else {
+                    height = minimumHeight;
+                }
+
+                item.$ownItemHeight = height;
+
+                jln = me.scrollDockItems.top.length;
+                if (item.isFirst) {
+                    me.totalScrollDockTopHeight = 0;
+                    for (j = 0; j < jln; j++) {
+                        scrollDockHeight = me.scrollDockItems.top[j].$scrollDockHeight;
+                        height += scrollDockHeight;
+                        me.totalScrollDockTopHeight += scrollDockHeight;
+                    }
+                }
+
+                jln = me.scrollDockItems.bottom.length;
+                if (item.isLast) {
+                    for (j = 0; j < jln; j++) {
+                        scrollDockHeight = me.scrollDockItems.bottom[j].$scrollDockHeight;
+                        height += scrollDockHeight;
+                    }
+                }
+
+                if (headerIndices && headerIndices[itemIndex]) {
+                    height += me.headerHeight;
+                }
+
+                itemMap.setItemHeight(itemIndex, height);
+                item.$height = height;
+            }
+        }
+
+        itemMap.update();
+        height = itemMap.getTotalHeight();
+
+        headerMap.length = 0;
+        for (i in headerIndices) {
+            if (headerIndices.hasOwnProperty(i)) {
+                headerMap.push(itemMap.map[i]);
+            }
+        }
+
+        me.setScrollerHeight(height);
+
+        me.updatedItems.length = 0;
+    },
+
+    setScrollerHeight: function(height) {
+        var me = this,
+            scroller = me.container.getScrollable().getScroller(),
+            translatable = scroller.getTranslatable();
+
+        if (height != scroller.givenSize) {
+            scroller.setSize(height);
+            scroller.refreshMaxPosition();
+            scroller.fireEvent('refresh', scroller);
+
+            if (translatable.isAnimating && translatable.activeEasingY && translatable.activeEasingY.setMinMomentumValue) {
+                translatable.activeEasingY.setMinMomentumValue(-scroller.getMaxPosition().y);
+            }
+        }
+    },
+
+    handleItemTransforms: function() {
+        var me = this,
+            listItems = me.listItems,
+            itemsCount = listItems.length,
+            itemMap = me.getItemMap(),
+            scrollDockItems = me.scrollDockItems,
+            grouped = me.getGrouped(),
+            item, transY, i, jln, j;
+
+        for (i = 0; i < itemsCount; i++) {
+            item = listItems[i];
+            transY = itemMap.map[item.$dataIndex];
+
+            if (!item.$hidden && item.$position !== transY) {
+                item.$position = transY;
+
+                jln = scrollDockItems.top.length;
+                if (item.isFirst && jln) {
+                    for (j = 0; j < jln; j++) {
+                        scrollDockItems.top[j].translate(0, transY);
+                        transY += scrollDockItems.top[j].$scrollDockHeight;
+                    }
+                }
+
+                if (grouped && me.getUseHeaders() && me.headerIndices && me.headerIndices[item.$dataIndex]) {
+                    item.getHeader().translate(0, transY);
+                    transY += me.headerHeight;
+                }
+
+                item.translate(0, transY);
+                transY += item.$ownItemHeight;
+
+                jln = scrollDockItems.bottom.length;
+                if (item.isLast && jln) {
+                    for (j = 0; j < jln; j++) {
+                        scrollDockItems.bottom[j].translate(0, transY);
+                        transY += scrollDockItems.bottom[j].$scrollDockHeight;
+                    }
+                }
+            }
+        }
+    },
+
+    handlePinnedHeader: function(y) {
+        var me = this,
+            pinnedHeader = me.pinnedHeader,
+            itemMap = me.getItemMap(),
+            groups = me.groups,
+            headerMap = me.headerMap,
+            headerHeight = me.headerHeight,
+            store = me.getStore(),
+            totalScrollDockTopHeight = me.totalScrollDockTopHeight,
+            record, closestHeader, pushedHeader, transY, headerString;
+
+        closestHeader = itemMap.binarySearch(headerMap, -y);
+        record = groups[closestHeader].children[0];
+
+        if (record) {
+            pushedHeader = y + headerMap[closestHeader + 1] - headerHeight;
+            // Top of the list or above (hide the floating header offscreen)
+            if (y >= 0 || (closestHeader === 0 && totalScrollDockTopHeight + y >= 0) || (closestHeader === 0 && -y <= headerMap[closestHeader])) {
+                transY = -10000;
+            }
+            // Scroll the floating header a bit
+            else if (pushedHeader < 0) {
+                transY = pushedHeader;
+            }
+            // Stick to the top of the screen
+            else {
+                transY = Math.max(0, y);
+            }
+
+            headerString = store.getGroupString(record);
+
+            if (pinnedHeader.$currentHeader != headerString) {
+                pinnedHeader.setHtml(headerString);
+                pinnedHeader.$currentHeader = headerString;
+            }
+
+            if (pinnedHeader.$position != transY) {
+                pinnedHeader.translate(0, transY);
+                pinnedHeader.$position = transY;
+            }
+        }
+    },
+
+    createItem: function(config) {
+        var me = this,
+            container = me.container,
+            listItems = me.listItems,
+            infinite = me.getInfinite(),
+            scrollElement = me.scrollElement,
+            useHeaders = me.getUseHeaders(),
+            item, header, itemCls;
+
+        item = Ext.factory(config);
+        item.dataview = me;
+        item.$height = config.minHeight;
+
+        if (!infinite) {
+            itemCls = me.getBaseCls() + '-item-relative';
+            item.addCls(itemCls);
+        }
+
+        if (useHeaders) {
+            header = item.getHeader();
+            if (!infinite) {
+                header.addCls(itemCls);
+            } else {
+                header.setTranslatable({
+                    translationMethod: this.translationMethod
+                });
+                header.translate(0, -10000);
+
+                scrollElement.insertFirst(header.renderElement);
+            }
+        }
+
+        container.doAdd(item);
+        listItems.push(item);
+
+        return item;
+    },
+
+    setItemsCount: function(itemsCount) {
+        var me = this,
+            listItems = me.listItems,
+            config = me.getListItemConfig(),
+            difference = itemsCount - listItems.length,
+            i;
+
+        // This loop will create new items if the new itemsCount is higher than the amount of items we currently have
+        for (i = 0; i < difference; i++) {
+            me.createItem(config);
+        }
+
+        // This loop will destroy unneeded items if the new itemsCount is lower than the amount of items we currently have
+        for (i = difference; i < 0; i++) {
+            listItems.pop().destroy();
+        }
+
+        me.itemsCount = itemsCount;
+
+        // Finally we update all the list items with the correct content
+        me.updateAllListItems();
+
+        //Android Stock bug where redraw is needed to show empty list
+        if (Ext.browser.is.AndroidStock && me.container.element && itemsCount === 0 && difference !== 0) {
+            me.container.element.redraw();
+        }
+
+        return me.listItems;
+    },
+
+    updateUi: function(newUi, oldUi) {
+        if (newUi && newUi != oldUi && newUi == 'round') {
+            this.setPinHeaders(false);
+        }
+
+        this.callParent(arguments);
+    },
+
+    updateListItem: function(item, index, info) {
+        var me = this,
+            record = info.store.getAt(index),
+            headerIndices = me.headerIndices,
+            footerIndices = me.footerIndices,
+            useHeaders = me.getUseHeaders(),
+            header = useHeaders && item.getHeader(),
+            scrollDockItems = me.scrollDockItems,
+            updatedItems = me.updatedItems,
+            currentItemCls = item.renderElement.classList,
+            currentHeaderCls = useHeaders && header.renderElement.classList,
+            infinite = me.getInfinite(),
+            storeCount = info.store.getCount(),
+            itemCls = [],
+            headerCls = [],
+            itemRemoveCls = [info.headerCls, info.footerCls, info.firstCls, info.lastCls, info.selectedCls, info.stripeCls],
+            headerRemoveCls = [info.headerCls, info.footerCls, info.firstCls, info.lastCls],
+            ln, i, scrollDockItem, classCache;
+
+        // When we update a list item, the header and scrolldocks can make it have to be retransformed.
+        // For that reason we want to always set the position to -10000 so that the next time we translate
+        // all the pieces are transformed to the correct location
+        if (infinite) {
+            item.$position = -10000;
+        }
+
+        // We begin by hiding/showing the item and its header depending on a record existing at this index
+        if (!record) {
+            item.setRecord(null);
+            if (infinite) {
+                item.translate(0, -10000);
+            } else {
+                item.hide();
+            }
+
+            if (useHeaders) {
+                if (infinite) {
+                    header.translate(0, -10000);
+                } else {
+                    header.hide();
+                }
+            }
+            item.$hidden = true;
+            return;
+        } else if (item.$hidden) {
+            if (!infinite) {
+                item.show();
+            }
+            item.$hidden = false;
+        }
+
+        if (infinite) {
+            updatedItems.push(item);
+        }
+
+        // If this item was previously used for the first record in the store, and now it will not be, then we hide
+        // any scrollDockTop items and change the isFirst flag
+        if (item.isFirst && index !== 0 && scrollDockItems.top.length) {
+            for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.top[i];
+                if (infinite) {
+                    scrollDockItem.translate(0, -10000);
+                }
+            }
+            item.isFirst = false;
+        }
+
+        // If this item was previously used for the last record in the store, and now it will not be, then we hide
+        // any scrollDockBottom items and change the istLast flag
+        if (item.isLast && index !== storeCount - 1 && scrollDockItems.bottom.length) {
+            for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.bottom[i];
+                if (infinite) {
+                    scrollDockItem.translate(0, -10000);
+                }
+            }
+            item.isLast = false;
+        }
+
+        // If the item is already bound to this record then we shouldn't have to do anything
+        if (item.$dataIndex !== index) {
+            item.$dataIndex = index;
+            me.fireEvent('itemindexchange', me, record, index, item);
+        }
+
+        // This is where we actually update the item with the record
+        if (item.getRecord() === record) {
+            item.updateRecord(record);
+        } else {
+            item.setRecord(record);
+        }
+
+        if (me.isSelected(record)) {
+            itemCls.push(info.selectedCls);
+        }
+
+        if (info.grouped && useHeaders) {
+            if (headerIndices[index]) {
+                itemCls.push(info.headerCls);
+                headerCls.push(info.headerCls);
+                header.setHtml(info.store.getGroupString(record));
+
+                if (!infinite) {
+                    header.renderElement.insertBefore(item.renderElement);
+                    header.show();
+                }
+            } else {
+                if (infinite) {
+                    header.translate(0, -10000);
+                } else {
+                    header.hide();
+                }
+            }
+            if (footerIndices[index]) {
+                itemCls.push(info.footerCls);
+                headerCls.push(info.footerCls);
+            }
+        }
+
+        if (index === 0) {
+            item.isFirst = true;
+            itemCls.push(info.firstCls);
+            headerCls.push(info.firstCls);
+
+            if (!info.grouped) {
+                itemCls.push(info.headerCls);
+                headerCls.push(info.headerCls);
+            }
+
+            if (!infinite) {
+                for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+                    scrollDockItem = scrollDockItems.top[i];
+                    if (info.grouped) {
+                        scrollDockItem.renderElement.insertBefore(header.renderElement);
+                    } else {
+                        scrollDockItem.renderElement.insertBefore(item.renderElement);
+                    }
+                }
+            }
+        }
+
+        if (index === storeCount - 1) {
+            item.isLast = true;
+            itemCls.push(info.lastCls);
+            headerCls.push(info.lastCls);
+
+            if (!info.grouped) {
+                itemCls.push(info.footerCls);
+                headerCls.push(info.footerCls);
+            }
+
+            if (!infinite) {
+                for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+                    scrollDockItem = scrollDockItems.bottom[i];
+                    scrollDockItem.renderElement.insertAfter(item.renderElement);
+                }
+            }
+        }
+
+        if (info.striped && index % 2 == 1) {
+            itemCls.push(info.stripeCls);
+        }
+
+        if (currentItemCls) {
+            for (i = 0; i < itemRemoveCls.length; i++) {
+                Ext.Array.remove(currentItemCls, itemRemoveCls[i]);
+            }
+            itemCls = Ext.Array.merge(itemCls, currentItemCls);
+        }
+
+        if (useHeaders && currentHeaderCls) {
+            for (i = 0; i < headerRemoveCls.length; i++) {
+                Ext.Array.remove(currentHeaderCls, headerRemoveCls[i]);
+            }
+            headerCls = Ext.Array.merge(headerCls, currentHeaderCls);
+        }
+
+        classCache = itemCls.join(' ');
+
+        if (item.classCache !== classCache) {
+            item.renderElement.setCls(itemCls);
+        }
+
+        item.classCache = classCache;
+
+        if (useHeaders) {
+            header.renderElement.setCls(headerCls);
+        }
+    },
+
+    updateAllListItems: function() {
+        var me = this,
+            store = me.getStore(),
+            items = me.listItems,
+            info = me.getListItemInfo(),
+            topRenderedIndex = me.topRenderedIndex,
+            i, ln;
+
+        if (store) {
+            for (i = 0, ln = items.length; i < ln; i++) {
+                me.updateListItem(items[i], topRenderedIndex + i, info);
+            }
+        }
+
+        if (me.isPainted()) {
+            if (me.getInfinite() && store && store.getCount()) {
+                me.handleItemHeights();
+            }
+            me.refreshScroller();
+        }
+    },
+
+    doRefresh: function() {
+        var me = this,
+            infinite = me.getInfinite(),
+            scroller = me.container.getScrollable().getScroller(),
+            storeCount = me.getStore().getCount();
+
+        if (infinite) {
+            me.getItemMap().populate(storeCount, this.topRenderedIndex);
+        }
+
+        if (me.getGrouped()) {
+            me.refreshHeaderIndices();
+        }
+
+        // This will refresh the items on the screen with the new data
+        if (storeCount) {
+            me.hideScrollDockItems();
+            me.hideEmptyText();
+            if (!infinite) {
+                me.setItemsCount(storeCount);
+                if (me.getScrollToTopOnRefresh()) {
+                    scroller.scrollTo(0, 0);
+                }
+            } else {
+                if (me.getScrollToTopOnRefresh()) {
+                    me.topRenderedIndex = 0;
+                    me.topVisibleIndex = 0;
+                    scroller.position.y = 0;
+                }
+                me.updateAllListItems();
+            }
+        } else {
+            me.onStoreClear();
+        }
+    },
+
+    onContainerResize: function(container, size) {
+        var me = this,
+            currentVisibleCount = me.visibleCount;
+
+        if (!me.headerHeight) {
+            me.headerHeight = parseInt(me.pinnedHeader.renderElement.getHeight(), 10);
+        }
+
+        if (me.getInfinite()) {
+            me.visibleCount = Math.ceil(size.height / me.getItemMap().getMinimumHeight());
+            if (me.visibleCount != currentVisibleCount) {
+                me.setItemsCount(me.visibleCount + me.getBufferSize());
+                // This is a private event used by some plugins
+                me.fireEvent('updatevisiblecount', this, me.visibleCount, currentVisibleCount);
+            }
+        } else if (me.listItems.length && me.getUseHeaders() && me.getGrouped() && me.getPinHeaders()) {
+            // Whenever the container resizes, headers might be in different locations. For this reason
+            // we refresh the header position map
+            me.updateHeaderMap();
+        }
+    },
+
+    refreshScroller: function() {
+        var me = this;
+
+        if (me.isPainted()) {
+            if (!me.getInfinite() && me.getGrouped() && me.getPinHeaders()) {
+                me.updateHeaderMap();
+            }
+
+            me.container.getScrollable().getScroller().refresh();
+        }
+    },
+
+    updateHeaderMap: function() {
+        var me = this,
+            headerMap = me.headerMap,
+            headerIndices = me.headerIndices,
+            header, i;
+
+        headerMap.length = 0;
+        for (i in headerIndices) {
+            if (headerIndices.hasOwnProperty(i)) {
+                header = me.getItemAt(i).getHeader();
+                headerMap.push(header.renderElement.dom.offsetTop);
+            }
+        }
+    },
+
+    applyVariableHeights: function(value) {
+        if (!this.getInfinite()) {
+            return true;
+        }
+        return value;
+    },
+
+    applyDefaultType: function(defaultType) {
+        if (!defaultType) {
+            defaultType = this.getUseSimpleItems() ? 'simplelistitem' : 'listitem';
+        }
+        return defaultType;
+    },
+
+    applyItemMap: function(itemMap) {
+        return Ext.factory(itemMap, Ext.util.PositionMap, this.getItemMap());
+    },
+
+    updateItemHeight: function(itemHeight) {
+        this.getItemMap().setMinimumHeight(itemHeight);
+    },
+
+    applyIndexBar: function(indexBar) {
+        return Ext.factory(indexBar, Ext.dataview.IndexBar, this.getIndexBar());
+    },
+
+    updatePinHeaders: function(pinnedHeaders) {
+        if (this.isPainted()) {
+            this.pinnedHeader.translate(0, pinnedHeaders ? this.pinnedHeader.$position : -10000);
+        }
+    },
+
+    updateItemTpl: function(newTpl) {
+        var me = this,
+            listItems = me.listItems,
+            ln = listItems.length || 0,
+            i, listItem;
+
+        for (i = 0; i < ln; i++) {
+            listItem = listItems[i];
+            listItem.setTpl(newTpl);
+        }
+
+        me.updateAllListItems();
+    },
+
+    updateItemCls: function(newCls, oldCls) {
+        var items = this.listItems,
+            ln = items.length,
+            i, item;
+
+        for (i = 0; i < ln; i++) {
+            item = items[i];
+            item.removeCls(oldCls);
+            item.addCls(newCls);
+        }
+    },
+
+    updateIndexBar: function(indexBar, oldIndexBar) {
+        var me = this,
+            scrollViewElement = me.scrollViewElement;
+
+        if (oldIndexBar) {
+            oldIndexBar.un({
+                index: 'onIndex',
+                scope: me
+            });
+
+            if (!indexBar) {
+                me.element.removeCls(me.getBaseCls() + '-indexed');
+            }
+
+            if (scrollViewElement) {
+                scrollViewElement.removeChild(oldIndexBar.renderElement);
+            }
+        }
+
+        if (indexBar) {
+            indexBar.on({
+                index: 'onIndex',
+                scope: me
+            });
+
+            if (!oldIndexBar) {
+                me.element.addCls(me.getBaseCls() + '-indexed');
+            }
+
+            if (scrollViewElement) {
+                scrollViewElement.appendChild(indexBar.renderElement);
+            }
+        }
+    },
+
+    updateGrouped: function(grouped) {
+        var me = this,
+            baseCls = this.getBaseCls(),
+            pinnedHeader = me.pinnedHeader,
+            cls = baseCls + '-grouped',
+            unCls = baseCls + '-ungrouped';
+
+        if (pinnedHeader) {
+            pinnedHeader.translate(0, -10000);
+        }
+
+        if (grouped) {
+            me.addCls(cls);
+            me.removeCls(unCls);
+        } else {
+            me.addCls(unCls);
+            me.removeCls(cls);
+        }
+
+        me.updateAllListItems();
+    },
+
+    onStoreAdd: function() {
+        this.doRefresh();
+    },
+
+    onStoreRemove: function() {
+        this.doRefresh();
+    },
+
+    onStoreUpdate: function(store, record, newIndex, oldIndex) {
+        var me = this,
+            item;
+
+        oldIndex = (typeof oldIndex === 'undefined') ? newIndex : oldIndex;
+
+        if (me.getInfinite() || (oldIndex !== newIndex)) {
+            me.doRefresh();
+        }
+        else {
+            item = me.listItems[newIndex];
+            if (item) {
+                me.updateListItem(item, newIndex, me.getListItemInfo());
+            }
+        }
+    },
+
+    onStoreClear: function() {
+        var me = this,
+            scroller = me.container.getScrollable().getScroller(),
+            infinite = me.getInfinite();
+
+        if (me.pinnedHeader) {
+            me.pinnedHeader.translate(0, -10000);
+        }
+
+        if (!infinite) {
+            me.setItemsCount(0);
+            scroller.scrollTo(0, 0);
+        } else {
+            me.topRenderedIndex = 0;
+            me.topVisibleIndex = 0;
+            scroller.position.y = 0;
+            me.updateAllListItems();
+        }
+    },
+
+    showEmptyScrollDock: function() {
+        var me = this,
+            infinite = me.getInfinite(),
+            scrollDockItems = me.scrollDockItems,
+            offset = 0,
+            i, ln, item;
+
+        for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+            item = scrollDockItems.top[i];
+            if (infinite) {
+                item.translate(0, offset);
+                offset += item.$scrollDockHeight;
+            } else {
+                this.scrollElement.appendChild(item.renderElement);
+            }
+        }
+
+        for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+            item = scrollDockItems.bottom[i];
+            if (infinite) {
+                item.translate(0, offset);
+                offset += item.$scrollDockHeight;
+            } else {
+                this.scrollElement.appendChild(item.renderElement);
+            }
+        }
+    },
+
+    hideScrollDockItems: function() {
+        var me = this,
+            infinite = me.getInfinite(),
+            scrollDockItems = me.scrollDockItems,
+            i, ln, item;
+
+        if (!infinite) {
+            return;
+        }
+
+        for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+            item = scrollDockItems.top[i];
+            item.translate(0, -10000);
+        }
+
+        for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+            item = scrollDockItems.bottom[i];
+            item.translate(0, -10000);
+        }
+    },
+
+    /**
+     * Returns an item at the specified index.
+     * @param {Number} index Index of the item.
+     * @return {Ext.dom.Element/Ext.dataview.component.DataItem} item Item at the specified index.
+     */
+    getItemAt: function(index) {
+        var listItems = this.listItems,
+            ln = listItems.length,
+            i, listItem;
+
+        for (i = 0; i < ln; i++) {
+            listItem = listItems[i];
+            if (listItem.$dataIndex == index) {
+                return listItem;
+            }
+        }
+    },
+
+    /**
+     * Returns an index for the specified item.
+     * @param {Number} item The item to locate.
+     * @return {Number} Index for the specified item.
+     */
+    getItemIndex: function(item) {
+        return item.$dataIndex;
+    },
+
+    /**
+     * Returns an array of the current items in the DataView.
+     * @return {Ext.dom.Element[]/Ext.dataview.component.DataItem[]} Array of Items.
+     */
+    getViewItems: function() {
+        return this.listItems;
+    },
+
+    getListItemInfo: function() {
+        var me = this,
+            baseCls = me.getBaseCls();
+
+        return {
+            store: me.getStore(),
+            grouped: me.getGrouped(),
+            baseCls: baseCls,
+            selectedCls: me.getSelectedCls(),
+            headerCls: baseCls + '-header-wrap',
+            footerCls: baseCls + '-footer-wrap',
+            firstCls: baseCls + '-item-first',
+            lastCls: baseCls + '-item-last',
+            stripeCls: baseCls + '-item-odd',
+            striped: me.getStriped(),
+            itemMap: me.getItemMap(),
+            defaultItemHeight: me.getItemHeight()
+        };
+    },
+
+    getListItemConfig: function() {
+        var me = this,
+            minimumHeight = me.getItemMap().getMinimumHeight(),
+            config = {
+                xtype: me.getDefaultType(),
+                itemConfig: me.getItemConfig(),
+                tpl: me.getItemTpl(),
+                minHeight: minimumHeight,
+                cls: me.getItemCls()
+            };
+
+        if (me.getInfinite()) {
+            config.translatable = {
+                translationMethod: this.translationMethod
+            };
+        }
+
+        if (!me.getVariableHeights()) {
+            config.height = minimumHeight;
+        }
+
+        return config;
+    },
+
+    refreshHeaderIndices: function() {
+        var me = this,
+            store = me.getStore(),
+            storeLn = store && store.getCount(),
+            groups = store.getGroups(),
+            groupLn = groups.length,
+            headerIndices = me.headerIndices = {},
+            footerIndices = me.footerIndices = {},
+            i, previousIndex, firstGroupedRecord, storeIndex;
+
+        me.groups = groups;
+
+        for (i = 0; i < groupLn; i++) {
+            firstGroupedRecord = groups[i].children[0];
+            storeIndex = store.indexOf(firstGroupedRecord);
+            headerIndices[storeIndex] = true;
+
+            previousIndex = storeIndex - 1;
+            if (previousIndex >= 0) {
+                footerIndices[previousIndex] = true;
+            }
+        }
+
+        footerIndices[storeLn - 1] = true;
+
+        return headerIndices;
+    },
+
+    onIndex: function(indexBar, index) {
+        var me = this,
+            key = index.toLowerCase(),
+            store = me.getStore(),
+            groups = store.getGroups(),
+            ln = groups.length,
+            group, i, closest, id;
+
+        for (i = 0; i < ln; i++) {
+            group = groups[i];
+            id = group.name.toLowerCase();
+            if (id >= key) {
+                closest = group;
+                break;
+            }
+            else {
+                closest = group;
+            }
+        }
+
+        if (closest) {
+            this.scrollToRecord(closest.children[0]);
+        }
+    },
+
+    scrollToRecord: function(record, animate, overscroll) {
+        var me = this,
+            scroller = me.container.getScrollable().getScroller(),
+            store = me.getStore(),
+            index = store.indexOf(record);
+
+        //stop the scroller from scrolling
+        scroller.stopAnimation();
+
+        //make sure the new offsetTop is not out of bounds for the scroller
+        var containerSize = scroller.getContainerSize().y,
+            size = scroller.getSize().y,
+            maxOffset = size - containerSize,
+            offset, item;
+
+        if (me.getInfinite()) {
+            offset = me.getItemMap().map[index];
+        }
+        else {
+            item = me.listItems[index];
+            if (me.getUseHeaders() && item.getHeader().isPainted()) {
+                offset = item.getHeader().renderElement.dom.offsetTop;
+            }
+            else {
+                offset = item.renderElement.dom.offsetTop;
+            }
+        }
+
+        if (!overscroll) {
+            offset = Math.min(offset, maxOffset);
+        }
+
+        scroller.scrollTo(0, offset, !!animate);
+    },
+
+    onItemAdd: function(item) {
+        var me = this,
+            config = item.config;
+
+        if (config.scrollDock) {
+            if (config.scrollDock == 'bottom') {
+                me.scrollDockItems.bottom.push(item);
+            } else {
+                me.scrollDockItems.top.push(item);
+            }
+
+            if (me.getInfinite()) {
+                item.on({
+                    resize: 'onScrollDockItemResize',
+                    scope: this
+                });
+
+                item.addCls(me.getBaseCls() + '-scrolldockitem');
+                item.setTranslatable({
+                    translationMethod: this.translationMethod
+                });
+                item.translate(0, -10000);
+                item.$scrollDockHeight = 0;
+            }
+
+            me.container.doAdd(item);
+        } else {
+            me.callParent(arguments);
+        }
+    },
+
+    /**
+     * Returns all the items that are docked in the scroller in this list.
+     * @return {Array} An array of the scrollDock items
+     */
+    getScrollDockedItems: function() {
+        return this.scrollDockItems.bottom.slice().concat(this.scrollDockItems.top.slice());
+    },
+
+    onScrollDockItemResize: function(dockItem, size) {
+        var me = this,
+            items = me.listItems,
+            ln = items.length,
+            i, item;
+
+        Ext.getCmp(dockItem.id).$scrollDockHeight = size.height;
+
+        for (i = 0; i < ln; i++) {
+            item = items[i];
+            if (item.isLast) {
+                this.updatedItems.push(item);
+                this.refreshScroller();
+                break;
+            }
+        }
+    },
+
+    onItemTouchStart: function(e) {
+        this.container.innerElement.on({
+            touchmove: 'onItemTouchMove',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item',
+            single: true,
+            scope: this
+        });
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTouchMove: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTouchEnd: function(e) {
+        this.container.innerElement.un({
+            touchmove: 'onItemTouchMove',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item',
+            scope: this
+        });
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTapHold: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemSingleTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemDoubleTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemSwipe: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    parseEvent: function(e) {
+        var me = this,
+            target = Ext.fly(e.getTarget()).findParent('.' + Ext.baseCSSPrefix + 'list-item', 8),
+            item = Ext.getCmp(target.id);
+
+        return [me, item, item.$dataIndex, e];
+    },
+
+    doItemSelect: function(me, record) {
+        this.callParent(arguments);
+
+        var item = me.getItemAt(me.getStore().indexOf(record));
+        if (me.container && !me.isDestroyed && item && item.isComponent) {
+            item.classCache = item.renderElement.classList;
+        }
+    },
+
+    doItemDeselect: function(me, record) {
+        this.callParent(arguments);
+
+        var item = me.getItemAt(me.getStore().indexOf(record));
+        if (item && item.isComponent) {
+            item.classCache = item.renderElement.classList;
+        }
+    },
+
+    applyOnItemDisclosure: function(config) {
+        if (Ext.isFunction(config)) {
+            return {
+                scope: this,
+                handler: config
+            };
+        }
+        return config;
+    },
+
+    handleItemDisclosure: function(e) {
+        var me = this,
+            item = Ext.getCmp(Ext.get(e.getTarget()).up('.x-list-item').id),
+            index = item.$dataIndex,
+            record = me.getStore().getAt(index);
+
+        me.fireAction('disclose', [me, record, item, index, e], 'doDisclose');
+    },
+
+    doDisclose: function(me, record, item, index, e) {
+        var onItemDisclosure = me.getOnItemDisclosure();
+
+        if (onItemDisclosure && onItemDisclosure.handler) {
+            onItemDisclosure.handler.call(onItemDisclosure.scope || me, record, item, index, e);
+        }
+    },
+
+    // apply to the selection model to maintain visual UI cues
+    onItemTrigger: function(me, index, target, record, e) {
+        if (!(this.getPreventSelectionOnDisclose() && Ext.fly(e.target).hasCls(this.getBaseCls() + '-disclosure'))) {
+            this.callParent(arguments);
+        }
+    },
+
+    destroy: function() {
+        var me = this,
+            items = me.listItems,
+            ln = items.length,
+            i;
+
+        me.callParent(arguments);
+
+        if (me.onIdleBound) {
+            Ext.AnimationQueue.unIdle(me.onAnimationIdle, me);
+        }
+
+        for (i = 0; i < ln; i++) {
+            items[i].destroy();
+        }
+        me.listItems = null;
+    }
+});
+
 // Using @mixins to include all members of Ext.event.Touch
 // into here to keep documentation simpler
 /**
@@ -63672,6 +66053,1404 @@ Ext.define('Ext.fx.Runner', {
     }
 });
 
+/**
+ * Description
+ */
+Ext.define('Ext.grid.Row', {
+    extend:  Ext.Component ,
+    xtype: 'gridrow',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'grid-row',
+        grid: null
+    },
+
+    constructor: function() {
+        this.cells = [];
+        this.columnMap = {};
+        this.callParent(arguments);
+    },
+
+    updateGrid: function(grid) {
+        var me = this,
+            i, columns, ln;
+
+        me.element.innerHTML = '';
+        me.cells = [];
+
+        if (grid) {
+            columns = grid.getColumns();
+            for (i = 0, ln = columns.length; i < ln; i++) {
+                me.addColumn(columns[i]);
+            }
+        }
+    },
+
+    addColumn: function(column) {
+        this.insertColumn(this.cells.length, column);
+    },
+
+    insertColumn: function(index, column) {
+        if (this.getCellByColumn(column)) {
+            return;
+        }
+
+        var me = this,
+            element = me.element,
+            cells = me.cells,
+            columnMap = me.columnMap,
+            cell = me.createCell(index),
+            beforeCell = me.cells[index],
+            cellCls = column.getCellCls(),
+            cellEl = Ext.get(cell),
+            record = this.getRecord(),
+            cls = [];
+
+        cell.$column = column;
+        cell.style.width = column.getWidth() + 'px';
+
+        if (column.isHidden()) {
+            cell.style.display = 'none';
+        }
+
+        cls.push(Ext.baseCSSPrefix + 'grid-cell-align-' + column.getAlign());
+        if (cellCls) {
+            cls.push(cellCls);
+        }
+        cellEl.addCls(cls);
+
+        if (record) {
+            column.updateCell(cell, record);
+        }
+
+        if (beforeCell) {
+            element.dom.insertBefore(cell, beforeCell);
+            cells.splice(index, 0, cell);
+        } else {
+            element.dom.appendChild(cell);
+            cells.push(cell);
+        }
+
+        columnMap[column.getId()] = cell;
+    },
+
+    removeColumn: function(column) {
+        var me = this,
+            columnMap = me.columnMap,
+            element = me.element,
+            columnId = column.getId(),
+            cell = columnMap[columnId];
+
+        delete cell.$column;
+        if (cell) {
+            element.removeChild(cell);
+        }
+
+        Ext.Array.remove(me.cells, cell);
+        delete columnMap[columnId];
+    },
+
+    updateRecord: function(record) {
+        var me = this,
+            cells = me.cells,
+            i, ln, cell, column;
+
+        for (i = 0, ln = cells.length; i < ln; i++) {
+            cell = cells[i];
+            column = me.getColumnByCell(cell);
+            column.updateCell(cell, record);
+        }
+    },
+
+    setColumnWidth: function(column, width) {
+        var cell = this.getCellByColumn(column);
+        if (cell) {
+            cell.style.width = width + 'px';
+        }
+    },
+
+    showColumn: function(column) {
+        var cell = this.getCellByColumn(column);
+        if (cell) {
+            cell.style.display = '';
+        }
+    },
+
+    hideColumn: function(column) {
+        var cell = this.getCellByColumn(column);
+        if (cell) {
+            cell.style.display = 'none';
+        }
+    },
+
+    getCellByColumn: function(column) {
+        return this.columnMap[column.getId()];
+    },
+
+    getColumnByCell: function(cell) {
+        return cell.$column;
+    },
+
+    createCell: function() {
+        var prototype = this.self.prototype,
+            renderTemplate, elements, element, i, ln;
+
+        if (!prototype.hasOwnProperty('cellRenderTemplate')) {
+            prototype.cellRenderTemplate = renderTemplate = document.createDocumentFragment();
+            renderTemplate.appendChild(Ext.Element.create(this.getCellElementConfig(), true));
+
+            elements = renderTemplate.querySelectorAll('[id]');
+
+            for (i = 0, ln = elements.length; i < ln; i++) {
+                element = elements[i];
+                element.removeAttribute('id');
+            }
+        }
+
+        return prototype.cellRenderTemplate.cloneNode(true).firstChild;
+    },
+
+    getCellElementConfig: function() {
+        var config = {
+                tag: 'div',
+                cls: Ext.baseCSSPrefix + 'grid-cell',
+                html: '&nbsp;'
+            };
+
+        return config;
+    }
+});
+
+/**
+ * This class specifies the definition for a column inside a {@link Ext.grid.Grid}. It encompasses
+ * both the grid header configuration as well as displaying data within the grid itself.
+ * In general an array of column configurations will be passed to the grid:
+ *
+ *     @example
+ *     Ext.create('Ext.data.Store', {
+ *         storeId: 'employeeStore',
+ *         fields: ['firstname', 'lastname', 'seniority', 'dep', 'hired'],
+ *         data: [
+ *             {firstname:"Michael", lastname:"Scott", seniority:7, dep:"Management", hired:"01/10/2004"},
+ *             {firstname:"Dwight", lastname:"Schrute", seniority:2, dep:"Sales", hired:"04/01/2004"},
+ *             {firstname:"Jim", lastname:"Halpert", seniority:3, dep:"Sales", hired:"02/22/2006"},
+ *             {firstname:"Kevin", lastname:"Malone", seniority:4, dep:"Accounting", hired:"06/10/2007"},
+ *             {firstname:"Angela", lastname:"Martin", seniority:5, dep:"Accounting", hired:"10/21/2008"}
+ *         ]
+ *     });
+ *
+ *     var grid = Ext.create('Ext.grid.Grid', {
+ *         title: 'Column Demo',
+ *         store: Ext.data.StoreManager.lookup('employeeStore'),
+ *         columns: [
+ *             {text: 'First Name',  dataIndex:'firstname'},
+ *             {text: 'Last Name',  dataIndex:'lastname'},
+ *             {text: 'Hired Month',  dataIndex:'hired', xtype:'datecolumn', format:'M'},
+ *             {text: 'Department (Yrs)', xtype:'templatecolumn', tpl:'{dep} ({seniority})'}
+ *         ],
+ *         width: 400
+ *     });
+ *     Ext.ViewPort.add(grid);
+ *
+ * # Convenience Subclasses
+ *
+ * There are several column subclasses that provide default rendering for various data types
+ *
+ *  - {@link Ext.grid.column.Boolean}: Renders for boolean values
+ *  - {@link Ext.grid.column.Date}: Renders for date values
+ *  - {@link Ext.grid.column.Number}: Renders for numeric values
+ *  - {@link Ext.grid.column.Template}: Renders a value using an {@link Ext.XTemplate} using the record data
+ *
+ * # Setting Sizes
+ *
+ * The columns can be only be given an explicit width value. If no width is specified the grid will
+ * automatically the size the column to 20px.
+ *
+ * # Header Options
+ *
+ *  - {@link #text}: Sets the header text for the column
+ *  - {@link #sortable}: Specifies whether the column can be sorted by clicking the header or using the column menu
+ *
+ * # Data Options
+ *
+ *  - {@link #dataIndex}: The dataIndex is the field in the underlying {@link Ext.data.Store} to use as the value for the column.
+ *  - {@link #renderer}: Allows the underlying store value to be transformed before being displayed in the grid
+ */
+Ext.define('Ext.grid.column.Column', {
+    extend:  Ext.Component ,
+
+    xtype: 'column',
+
+    config: {
+        /**
+         * @cfg {String} dataIndex
+         * The name of the field in the grid's {@link Ext.data.Store}'s {@link Ext.data.Model} definition from
+         * which to draw the column's value. **Required.**
+         */
+        dataIndex: null,
+
+        /**
+         * @cfg {String} text
+         * The header text to be used as innerHTML (html tags are accepted) to display in the Grid.
+         * **Note**: to have a clickable header with no text displayed you can use the default of `&#160;` aka `&nbsp;`.
+         */
+        text: '&nbsp;',
+
+        /**
+         * @cfg {Boolean} sortable
+         * False to disable sorting of this column. Whether local/remote sorting is used is specified in
+         * `{@link Ext.data.Store#remoteSort}`.
+         */
+        sortable: true,
+
+        /**
+         * @cfg {Boolean} resizable
+         * False to prevent the column from being resizable.
+         * Note that this configuration only works when the {@link Ext.grid.plugin.ColumnResizing ColumnResizing} plugin
+         * is enabled on the {@link Ext.grid.Grid Grid}.
+         */
+        resizable: true,
+
+        /**
+         * @cfg {Boolean} hideable
+         * False to prevent the user from hiding this column.
+         * TODO: Not implemented yet
+         * @private
+         */
+        hideable: true,
+
+        /**
+         * @cfg {Function/String} renderer
+         * A renderer is an 'interceptor' method which can be used to transform data (value, appearance, etc.)
+         * before it is rendered. Example:
+         *
+         *     {
+         *         renderer: function(value, record){
+         *             if (value === 1) {
+         *                 return '1 person';
+         *             }
+         *             return value + ' people';
+         *         }
+         *     }
+         *
+         * @cfg {Object} renderer.value The data value for the current cell
+         * @cfg {Ext.data.Model} renderer.record The record for the current row
+         * @cfg {Number} renderer.rowIndex The index of the current row
+         * @cfg {String} renderer.return The HTML string to be rendered.
+         */
+        renderer: false,
+
+        /**
+         * @cfg {Object} scope
+         * The scope to use when calling the {@link #renderer} function.
+         */
+        scope: null,
+
+        /**
+         * @cfg {String} align
+         * Sets the alignment of the header and rendered columns.
+         * Possible values are: `'left'`, `'center'`, and `'right'`.
+         */
+        align: 'left',
+
+        /**
+         * @cfg {Boolean} editable
+         * Set this to true to make this column editable.
+         * Only applicable if the grid is using an {@link Ext.grid.plugin.Editable Editable} plugin.
+         * @type {Boolean}
+         */
+        editable: false,
+
+        /**
+         * @cfg {Object/String} editor
+         * An optional xtype or config object for a {@link Ext.field.Field Field} to use for editing.
+         * Only applicable if the grid is using an {@link Ext.grid.plugin.Editable Editable} plugin.
+         * Note also that {@link #editable} has to be set to true if you want to make this column editable.
+         * If this configuration is not set, and {@link #editable} is set to true, the {@link #defaultEditor} is used.
+         */
+        editor: null,
+
+        /**
+         * @cfg {Object/Ext.field.Field}
+         * An optional config object that should not really be modified. This is used to create
+         * a default editor used by the {@link Ext.grid.plugin.Editable Editable} plugin when no
+         * {@link #editor} is specified.
+         * @type {Object}
+         */
+        defaultEditor: {
+            xtype: 'textfield',
+            required: true
+        },
+
+        /**
+         * @cfg {Boolean} ignore
+         * This configuration should be left alone in most cases. This is used to prevent certain columns
+         * (like the MultiSelection plugin column) to show up in plugins (like the {@link Ext.grid.plugin.ViewOptions} plugin).
+         */
+        ignore: false,
+
+        /**
+         * @cfg {String} summaryType
+         * This configuration specifies the type of summary. There are several built in summary types.
+         * These call underlying methods on the store:
+         *
+         *  - {@link Ext.data.Store#count count}
+         *  - {@link Ext.data.Store#sum sum}
+         *  - {@link Ext.data.Store#min min}
+         *  - {@link Ext.data.Store#max max}
+         *  - {@link Ext.data.Store#average average}
+         *
+         * Note that this configuration only works when the grid has the {@link Ext.grid.plugin.SummaryRow SummaryRow}
+         * plugin enabled.
+         */
+        summaryType: null,
+
+        /**
+         * @cfg {Function} summaryRenderer
+         * This summaryRenderer is called before displaying a value in the SummaryRow. The function is optional,
+         * if not specified the default calculated value is shown. The summaryRenderer is called with:
+         *  - value {Object} - The calculated value.
+         *
+         * Note that this configuration only works when the grid has the {@link Ext.grid.plugin.SummaryRow SummaryRow}
+         * plugin enabled.
+         */
+        summaryRenderer: null,
+
+        minWidth: 20,
+        baseCls: Ext.baseCSSPrefix + 'grid-column',
+        cellCls: null,
+        sortedCls: Ext.baseCSSPrefix + 'column-sorted',
+        sortDirection: null
+    },
+
+    updateAlign: function(align, oldAlign) {
+        if (oldAlign) {
+            this.removeCls(Ext.baseCSSPrefix + 'grid-column-align-' + align);
+        }
+        if (align) {
+            this.addCls(Ext.baseCSSPrefix + 'grid-column-align-' + align);
+        }
+    },
+
+    initialize: function() {
+        this.callParent();
+
+        this.element.on({
+            tap: 'onColumnTap',
+            longpress: 'onColumnLongPress',
+            scope: this
+        });
+    },
+
+    onColumnTap: function(e) {
+        this.fireEvent('tap', this, e);
+    },
+
+    onColumnLongPress: function(e) {
+        this.fireEvent('longpress', this, e);
+    },
+
+    updateText: function(text) {
+        this.setHtml(text);
+    },
+
+    doSetWidth: function(width) {
+        this.callParent(arguments);
+        this.fireEvent('columnresize', this, width);
+    },
+
+    updateDataIndex: function(dataIndex) {
+        var editor = this.getEditor();
+        if (editor) {
+            editor.name = dataIndex;
+        } else {
+            this.getDefaultEditor().name = dataIndex;
+        }
+    },
+
+    updateSortDirection: function(direction, oldDirection) {
+        if (!this.getSortable()) {
+            return;
+        }
+
+        var sortedCls = this.getSortedCls();
+
+        if (oldDirection) {
+            this.element.removeCls(sortedCls + '-' + oldDirection.toLowerCase());
+        }
+
+        if (direction) {
+            this.element.addCls(sortedCls + '-' + direction.toLowerCase());
+        }
+
+        this.fireEvent('sort', this, direction, oldDirection);
+    },
+
+    getCellContent: function(record) {
+        var me = this,
+            dataIndex = me.getDataIndex(),
+            renderer = me.getRenderer(),
+            scope = me.getScope(),
+            value = dataIndex && record.get(dataIndex);
+
+        return renderer ? renderer.call(scope || me, value, record, dataIndex) : me.defaultRenderer(value, record);
+    },
+
+    /**
+     * @method defaultRenderer
+     * When defined this will take precedence over the {@link Ext.grid.column.Column#renderer renderer} config.
+     * This is meant to be defined in subclasses that wish to supply their own renderer.
+     * @protected
+     * @template
+     */
+    defaultRenderer: function(value) {
+        return value;
+    },
+
+    updateCell: function(cell, record, content) {
+        if (cell && (record || content)) {
+            cell.firstChild.nodeValue = content || this.getCellContent(record);
+        }
+    }
+});
+
+/**
+ * A Column definition class which renders a passed date according to the default locale, or a configured
+ * {@link #format}.
+ *
+ *     @example
+ *     Ext.create('Ext.data.Store', {
+ *         storeId:'sampleStore',
+ *         fields:[
+ *             { name: 'symbol', type: 'string' },
+ *             { name: 'date',   type: 'date' },
+ *             { name: 'change', type: 'number' },
+ *             { name: 'volume', type: 'number' },
+ *             { name: 'topday', type: 'date' }
+ *         ],
+ *         data:[
+ *             { symbol: "msft",   date: '2011/04/22', change: 2.43, volume: 61606325, topday: '04/01/2010' },
+ *             { symbol: "goog",   date: '2011/04/22', change: 0.81, volume: 3053782,  topday: '04/11/2010' },
+ *             { symbol: "apple",  date: '2011/04/22', change: 1.35, volume: 24484858, topday: '04/28/2010' },
+ *             { symbol: "sencha", date: '2011/04/22', change: 8.85, volume: 5556351,  topday: '04/22/2010' }
+ *         ]
+ *     });
+ *
+ *     Ext.create('Ext.grid.Grid', {
+ *         title: 'Date Column Demo',
+ *         store: Ext.data.StoreManager.lookup('sampleStore'),
+ *         columns: [
+ *             { text: 'Symbol',   dataIndex: 'symbol', flex: 1 },
+ *             { text: 'Date',     dataIndex: 'date',   xtype: 'datecolumn',   format:'Y-m-d' },
+ *             { text: 'Change',   dataIndex: 'change', xtype: 'numbercolumn', format:'0.00' },
+ *             { text: 'Volume',   dataIndex: 'volume', xtype: 'numbercolumn', format:'0,000' },
+ *             { text: 'Top Day',  dataIndex: 'topday', xtype: 'datecolumn',   format:'l' }
+ *         ],
+ *         height: 200,
+ *         width: 450
+ *     });
+ */
+Ext.define('Ext.grid.column.Date', {
+    extend:  Ext.grid.column.Column ,
+
+                           
+
+    xtype: 'datecolumn',
+
+    config: {
+        /**
+         * @cfg {String} format
+         * A formatting string as used by {@link Ext.Date#format} to format a Date for this Column.
+         */
+        format: undefined
+    },
+
+    applyFormat: function(format) {
+        if (!format) {
+            format = Ext.Date.defaultFormat;
+        }
+        return format;
+    },
+
+    updateFormat: function(format) {
+        this.getDefaultEditor().dateFormat = format;
+    },
+
+    defaultRenderer: function(value) {
+        return Ext.util.Format.date(value, this.getFormat());
+    }
+});
+
+/**
+ * A Column definition class which renders a value by processing a {@link Ext.data.Model Model}'s
+ * {@link Ext.data.Model#persistenceProperty data} using a {@link #tpl configured}
+ * {@link Ext.XTemplate XTemplate}.
+ *
+ *     @example
+ *     Ext.create('Ext.data.Store', {
+ *         storeId:'employeeStore',
+ *         fields:['firstname', 'lastname', 'seniority', 'department'],
+ *         groupField: 'department',
+ *         data:[
+ *             { firstname: "Michael", lastname: "Scott",   seniority: 7, department: "Management" },
+ *             { firstname: "Dwight",  lastname: "Schrute", seniority: 2, department: "Sales" },
+ *             { firstname: "Jim",     lastname: "Halpert", seniority: 3, department: "Sales" },
+ *             { firstname: "Kevin",   lastname: "Malone",  seniority: 4, department: "Accounting" },
+ *             { firstname: "Angela",  lastname: "Martin",  seniority: 5, department: "Accounting" }
+ *         ]
+ *     });
+ *
+ *     Ext.create('Ext.grid.Panel', {
+ *         title: 'Column Template Demo',
+ *         store: Ext.data.StoreManager.lookup('employeeStore'),
+ *         columns: [
+ *             { text: 'Full Name',       xtype: 'templatecolumn', tpl: '{firstname} {lastname}', flex:1 },
+ *             { text: 'Department (Yrs)', xtype: 'templatecolumn', tpl: '{department} ({seniority})' }
+ *         ],
+ *         height: 200,
+ *         width: 300,
+ *         renderTo: Ext.getBody()
+ *     });
+ */
+Ext.define('Ext.grid.column.Template', {
+    extend:  Ext.grid.column.Column ,
+
+                                
+
+    xtype: 'templatecolumn',
+
+    config: {
+        /**
+         * @cfg {String/Ext.XTemplate} tpl
+         * An {@link Ext.XTemplate XTemplate}, or an XTemplate *definition string* to use to process a
+         * {@link Ext.data.Model Model}'s {@link Ext.data.Model#persistenceProperty data} to produce a
+         * column's rendered value.
+         */
+        tpl: null
+    },
+
+    applyTpl: function(tpl) {
+        if (Ext.isPrimitive(tpl) || !tpl.compile) {
+            tpl = new Ext.XTemplate(tpl);
+        }
+        return tpl;
+    },
+
+    defaultRenderer: function(value, record) {
+        return this.getTpl().apply(record.getData(true));
+    },
+
+    updateCell: function(cell, record, content) {
+        if (cell && (record || content)) {
+            cell.innerHTML = content || this.getCellContent(record);
+        }
+    }
+});
+
+/**
+ * @class Ext.grid.HeaderContainer
+ * @extends Ext.Container
+ * Description
+ */
+Ext.define('Ext.grid.HeaderContainer', {
+    extend:  Ext.Container ,
+    xtype: 'headercontainer',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'grid-header-container',
+        height: 65,
+        docked: 'top',
+        translationMethod: 'auto',
+        defaultType: 'column'
+    },
+
+    initialize: function() {
+        var me = this;
+
+        me.columns = [];
+
+        me.callParent();
+
+        me.on({
+            tap: 'onHeaderTap',
+            columnresize: 'onColumnResize',
+            show: 'onColumnShow',
+            hide: 'onColumnHide',
+            sort: 'onColumnSort',
+            scope: me,
+            delegate: 'column'
+        });
+
+        me.on({
+            show: 'onGroupShow',
+            hide: 'onGroupHide',
+            add: 'onColumnAdd',
+            remove: 'onColumnRemove',
+            scope: me,
+            delegate: 'gridheadergroup'
+        });
+
+        me.on({
+            add: 'onColumnAdd',
+            remove: 'onColumnRemove',
+            scope: me
+        });
+
+        if (Ext.browser.getPreferredTranslationMethod({translationMethod: this.getTranslationMethod()}) == 'scrollposition') {
+            me.innerElement.setLeft(500000);
+        }
+    },
+
+    getColumns: function() {
+        return this.columns;
+    },
+
+    getAbsoluteColumnIndex: function(column) {
+        var items = this.getInnerItems(),
+            ln = items.length,
+            index = 0,
+            innerIndex, i, item;
+
+        for (i = 0; i < ln; i++) {
+            item = items[i];
+
+            if (item === column) {
+                return index;
+            }
+            else if (item.isHeaderGroup) {
+                innerIndex = item.innerIndexOf(column);
+                if (innerIndex !== -1) {
+                    index += innerIndex;
+                    return index;
+                }
+                else {
+                    index += item.getInnerItems().length;
+                }
+            }
+            else {
+                index += 1;
+            }
+        }
+    },
+
+    onColumnAdd: function(parent, column) {
+        var me = this,
+            columns = me.columns,
+            columnIndex = me.getAbsoluteColumnIndex(column),
+            groupColomns, ln, i;
+
+        if (column.isHeaderGroup) {
+            groupColomns = column.getItems().items;
+
+            for (i = 0, ln = groupColomns.length; i < ln; i++) {
+                columns.splice(columnIndex + i, 0, groupColomns[i]);
+                me.fireEvent('columnadd', me, groupColomns[i], column);
+            }
+        } else {
+            columns.splice(columnIndex, 0, column);
+            me.fireEvent('columnadd', me, column, null);
+        }
+    },
+
+    onColumnRemove: function(parent, column) {
+        if (column.isHeaderGroup) {
+            var columns = column.getItems().items,
+                ln = columns.length,
+                i;
+
+            for (i = 0; i < ln; i++) {
+                Ext.Array.remove(this.columns, columns[i]);
+                this.fireEvent('columnremove', this, columns[i]);
+            }
+        } else {
+            Ext.Array.remove(this.columns, column);
+            this.fireEvent('columnremove', this, column);
+        }
+    },
+
+    onHeaderTap: function(column) {
+        if (!column.getIgnore() && column.getSortable()) {
+            var sortDirection = column.getSortDirection() || 'DESC',
+                newDirection = (sortDirection === 'DESC') ? 'ASC' : 'DESC';
+
+            column.setSortDirection(newDirection);
+        }
+
+        this.fireEvent('columntap', this, column);
+    },
+
+    onColumnShow: function(column) {
+        this.fireEvent('columnshow', this, column);
+    },
+
+    onColumnHide: function(column) {
+        this.fireEvent('columnhide', this, column);
+    },
+
+    onGroupShow: function(group) {
+        var columns = group.getInnerItems(),
+            ln = columns.length,
+            i, column;
+
+        for (i = 0; i < ln; i++) {
+            column = columns[i];
+            if (!column.isHidden()) {
+                this.fireEvent('columnshow', this, column);
+            }
+        }
+    },
+
+    onGroupHide: function(group) {
+        var columns = group.getInnerItems(),
+            ln = columns.length,
+            i, column;
+
+        for (i = 0; i < ln; i++) {
+            column = columns[i];
+            this.fireEvent('columnhide', this, column);
+        }
+    },
+
+    onColumnResize: function(column, width) {
+        this.fireEvent('columnresize', this, column, width);
+    },
+
+    onColumnSort: function(column, direction, newDirection) {
+        if (direction !== null) {
+            this.fireEvent('columnsort', this, column, direction, newDirection);
+        }
+    },
+
+    scrollTo: function(x) {
+        switch (Ext.browser.getPreferredTranslationMethod({translationMethod: this.getTranslationMethod()})) {
+            case 'scrollposition':
+                this.renderElement.dom.scrollLeft = 500000 - x;
+                break;
+            case 'csstransform':
+                this.innerElement.translate(x, 0);
+                break;
+        }
+    }
+});
+
+/**
+ * @class Ext.grid.HeaderGroup
+ * @extends Ext.Container
+ * Description
+ */
+Ext.define('Ext.grid.HeaderGroup', {
+    extend:  Ext.Container ,
+    alias: 'widget.gridheadergroup',
+    isHeaderGroup: true,
+
+    config: {
+        /**
+         * @cfg {String} text
+         * The header text to be used as innerHTML (html tags are accepted) to display in the Grid.
+         */
+        text: '&nbsp;',
+
+        defaultType: 'column',
+        baseCls: Ext.baseCSSPrefix + 'grid-headergroup',
+
+        /**
+         * We hide the HeaderGroup by default, and show it when any columns are added to it.
+         * @hide
+         */
+        hidden: true
+    },
+
+    updateText: function(text) {
+        this.setHtml(text);
+    },
+
+    initialize: function() {
+        this.on({
+            add: 'doVisibilityCheck',
+            remove: 'doVisibilityCheck'
+        });
+
+        this.on({
+            show: 'doVisibilityCheck',
+            hide: 'doVisibilityCheck',
+            delegate: '> column'
+        });
+
+        this.callParent(arguments);
+
+        this.doVisibilityCheck();
+    },
+
+    doVisibilityCheck: function() {
+        var columns = this.getInnerItems(),
+            ln = columns.length,
+            i, column;
+
+        for (i = 0; i < ln; i++) {
+            column = columns[i];
+            if (!column.isHidden()) {
+                if (this.isHidden()) {
+                    if (this.initialized) {
+                        this.show();
+                    } else {
+                        this.setHidden(false);
+                    }
+                }
+                return;
+            }
+        }
+
+        this.hide();
+    }
+});
+
+/**
+ * @author Tommy Maintz
+ *
+ * Grids are an excellent way of showing large amounts of tabular data on the client side. Essentially a supercharged
+ * `<table>`, Grid makes it easy to fetch, sort and filter large amounts of data.
+ *
+ * Grids are composed of two main pieces - a {@link Ext.data.Store Store} full of data and a set of columns to render.
+ *
+ * ## Basic GridPanel
+ *
+ *     @example
+ *     Ext.create('Ext.data.Store', {
+ *         storeId: 'simpsonsStore',
+ *         fields: ['name', 'email', 'phone'],
+ *         data: {'items': [
+ *             { 'name': 'Lisa',  "email":"lisa@simpsons.com",  "phone":"555-111-1224"  },
+ *             { 'name': 'Bart',  "email":"bart@simpsons.com",  "phone":"555-222-1234" },
+ *             { 'name': 'Homer', "email":"home@simpsons.com",  "phone":"555-222-1244"  },
+ *             { 'name': 'Marge', "email":"marge@simpsons.com", "phone":"555-222-1254"  }
+ *         ]}
+ *     });
+ *
+ *     Ext.create('Ext.grid.Grid', {
+ *         title: 'Simpsons',
+ *         store: Ext.data.StoreManager.lookup('simpsonsStore'),
+ *         columns: [
+ *             { text: 'Name',  dataIndex: 'name', width: 200},
+ *             { text: 'Email', dataIndex: 'email', width: 250},
+ *             { text: 'Phone', dataIndex: 'phone', width: 120}
+ *         ],
+ *         height: 200,
+ *         width: 400,
+ *         renderTo: Ext.getBody()
+ *     });
+ *
+ * The code above produces a simple grid with three columns. We specified a Store which will load JSON data inline.
+ * In most apps we would be placing the grid inside another container and wouldn't need to use the
+ * {@link #height}, {@link #width} and {@link #renderTo} configurations but they are included here to make it easy to get
+ * up and running.
+ *
+ * The grid we created above will contain a header bar with a title ('Simpsons'), a row of column headers directly underneath
+ * and finally the grid rows under the headers.
+ *
+ * ## Configuring columns
+ *
+ * By default, each column is sortable and will toggle between ASC and DESC sorting when you click on its header.
+ * It's easy to configure each column - here we use the same example as above and just modify the columns config:
+ *
+ *     columns: [
+ *         {
+ *             text: 'Name',
+ *             dataIndex: 'name',
+ *             sortable: false,
+ *             width: 250
+ *         },
+ *         {
+ *             text: 'Email',
+ *             dataIndex: 'email',
+ *             hidden: true
+ *         },
+ *         {
+ *             text: 'Phone',
+ *             dataIndex: 'phone',
+ *             width: 100
+ *         }
+ *     ]
+ *
+ * We turned off sorting on the 'Name' column so clicking its header now has no effect. We also made the Email
+ * column hidden by default (it can be shown again by using the {@link Ext.grid.plugin.ViewOptions ViewOptions} plugin).
+ * See the {@link Ext.grid.column.Column column docs} for more details.
+ *
+ * ## Renderers
+ *
+ * As well as customizing columns, it's easy to alter the rendering of individual cells using renderers. A renderer is
+ * tied to a particular column and is passed the value that would be rendered into each cell in that column. For example,
+ * we could define a renderer function for the email column to turn each email address into a mailto link:
+ *
+ *     columns: [
+ *         {
+ *             text: 'Email',
+ *             dataIndex: 'email',
+ *             renderer: function(value) {
+ *                 return Ext.String.format('<a href="mailto:{0}">{1}</a>', value, value);
+ *             }
+ *         }
+ *     ]
+ *
+ * See the {@link Ext.grid.column.Column column docs} for more information on renderers.
+ *
+ * ## Sorting & Filtering
+ *
+ * Every grid is attached to a {@link Ext.data.Store Store}, which provides multi-sort and filtering capabilities. It's
+ * easy to set up a grid to be sorted from the start:
+ *
+ *     var myGrid = Ext.create('Ext.grid.Panel', {
+ *         store: {
+ *             fields: ['name', 'email', 'phone'],
+ *             sorters: ['name', 'phone']
+ *         },
+ *         columns: [
+ *             { text: 'Name',  dataIndex: 'name' },
+ *             { text: 'Email', dataIndex: 'email' }
+ *         ]
+ *     });
+ *
+ * Sorting at run time is easily accomplished by simply clicking each column header. If you need to perform sorting on
+ * more than one field at run time it's easy to do so by adding new sorters to the store:
+ *
+ *     myGrid.store.sort([
+ *         { property: 'name',  direction: 'ASC' },
+ *         { property: 'email', direction: 'DESC' }
+ *     ]);
+ *
+ * See {@link Ext.data.Store} for examples of filtering.
+ *
+ * ## Plugins and Features
+ *
+ * Grid supports addition of extra functionality through plugins:
+ *
+ * - {@link Ext.grid.plugin.ViewOptions ViewOptions} - adds the ability to show/hide columns and reorder them.
+ *
+ * - {@link Ext.grid.plugin.ColumnResizing ColumnResizing} - allows for the ability to pinch to resize columns.
+ *
+ * - {@link Ext.grid.plugin.Editable Editable} - editing grid contents an entire row at a time.
+ *
+ * - {@link Ext.grid.plugin.MultiSelection MultiSelection} - selecting and deleting several rows at a time.
+ *
+ * - {@link Ext.grid.plugin.PagingToolbar PagingToolbar} - adds a toolbar at the bottom of the grid that allows you to quickly navigate to another page of data.
+ *
+ * - {@link Ext.grid.plugin.SummaryRow SummaryRow} - adds and pins an additional row to the top of the grid that enables you to display summary data.
+ */
+Ext.define('Ext.grid.Grid', {
+    extend:  Ext.List ,
+
+               
+                       
+                                 
+                               
+                                   
+                                   
+                               
+                       
+                        
+      
+
+    xtype: 'grid',
+
+    config: {
+        defaultType: 'gridrow',
+
+        /**
+         * @cfg {Boolean} infinite
+         * This List configuration should always be set to true on a Grid.
+         * @hide
+         */
+        infinite: true,
+
+        /**
+         * @cfg {Ext.grid.column.Column[]} columns (required)
+         * An array of column definition objects which define all columns that appear in this grid.
+         * Each column definition provides the header text for the column, and a definition of where
+         * the data for that column comes from.
+         *
+         * This can also be a configuration object for a {Ext.grid.header.Container HeaderContainer}
+         * which may override certain default configurations if necessary. For example, the special
+         * layout may be overridden to use a simpler layout, or one can set default values shared
+         * by all columns:
+         *
+         *      columns: {
+         *          items: [
+         *              {
+         *                  text: "Column A"
+         *                  dataIndex: "field_A",
+         *                  width: 200
+         *              },{
+         *                  text: "Column B",
+         *                  dataIndex: "field_B",
+         *                  width: 150
+         *              },
+         *              ...
+         *          ]
+         *      }
+         *
+         */
+        columns: null,
+
+        /**
+         * @cfg baseCls
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'grid',
+
+        /**
+         * @cfg {Boolean} useHeaders
+         * @hide
+         */
+        useHeaders: false,
+
+        itemHeight: 60,
+
+        /**
+         * @cfg {Boolean} variableHeights
+         * This configuration is best left to false on a Grid for performance reasons.
+         */
+        variableHeights: false,
+
+        headerContainer: {
+            xtype: 'headercontainer'
+        },
+
+        /**
+         * @cfg {Boolean} striped
+         * @inherit
+         */
+        striped: true,
+
+        itemCls: Ext.baseCSSPrefix + 'list-item',
+        scrollToTopOnRefresh: false,
+
+        titleBar: {
+            xtype: 'titlebar',
+            docked: 'top'
+        },
+
+        /**
+         * @cfg {String} title
+         * The title that will be displayed in the TitleBar at the top of this Grid.
+         */
+        title: ''
+    },
+
+    /**
+     * @event columnadd
+     * Fires whenever a column is added to the Grid.
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The added column
+     * @param {Number} index The index of the added column
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event columnremove
+     * Fires whenever a column is removed from the Grid.
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The removed column
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event columnshow
+     * Fires whenever a column is shown in the Grid
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The shown column
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event columnhide
+     * Fires whenever a column is hidden in the Grid.
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The shown column
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event columnresize
+     * Fires whenever a column is resized in the Grid.
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The resized column
+     * @param {Number} width The new column width
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event columnsort
+     * Fires whenever a column is sorted in the Grid
+     * @param {Ext.grid.Grid} this The Grid instance
+     * @param {Ext.grid.column.Column} column The sorted column
+     * @param {String} direction The direction of the sort on this Column. Either 'asc' or 'desc'
+     * @param {Ext.EventObject} e The event object
+     */
+
+    platformConfig: [{
+        theme: ['Windows'],
+        itemHeight: 60
+    }],
+
+    beforeInitialize: function() {
+        this.container = Ext.factory({
+            xtype: 'container',
+            scrollable: {
+                scroller: {
+                    autoRefresh: false,
+                    direction: 'auto',
+                    directionLock: true
+                }
+            }
+        });
+
+        this.callParent();
+    },
+
+    initialize: function() {
+        var me = this,
+            titleBar = me.getTitleBar(),
+            headerContainer = me.getHeaderContainer();
+
+        me.callParent();
+
+        if (titleBar) {
+            me.container.add(me.getTitleBar());
+        }
+        me.container.doAdd(headerContainer);
+
+        me.scrollElement.addCls(Ext.baseCSSPrefix + 'grid-scrollelement');
+    },
+
+    onTranslate: function(x) {
+        this.callParent(arguments);
+        this.getHeaderContainer().scrollTo(x);
+    },
+
+    applyTitleBar: function(titleBar) {
+        if (titleBar && !titleBar.isComponent) {
+            titleBar = Ext.factory(titleBar, Ext.TitleBar);
+        }
+        return titleBar;
+    },
+
+    updateTitle: function(title) {
+        this.getTitleBar().setTitle(title);
+    },
+
+    applyHeaderContainer: function(headerContainer) {
+        if (headerContainer && !headerContainer.isComponent) {
+            headerContainer = Ext.factory(headerContainer, Ext.grid.HeaderContainer);
+        }
+        return headerContainer;
+    },
+
+    updateHeaderContainer: function(headerContainer, oldHeaderContainer) {
+        var me = this;
+
+        if (oldHeaderContainer) {
+            oldHeaderContainer.un({
+                columnsort: 'onColumnSort',
+                columnresize: 'onColumnResize',
+                columnshow: 'onColumnShow',
+                columnhide: 'onColumnHide',
+                columnadd: 'onColumnAdd',
+                columnremove: 'onColumnRemove',
+                scope: me
+            });
+        }
+
+        if (headerContainer) {
+            headerContainer.on({
+                columnsort: 'onColumnSort',
+                columnresize: 'onColumnResize',
+                columnshow: 'onColumnShow',
+                columnhide: 'onColumnHide',
+                columnadd: 'onColumnAdd',
+                columnremove: 'onColumnRemove',
+                scope: me
+            });
+        }
+    },
+
+    addColumn: function(column) {
+        this.getHeaderContainer().add(column);
+    },
+
+    removeColumn: function(column) {
+        this.getHeaderContainer().remove(column);
+    },
+
+    insertColumn: function(index, column) {
+        this.getHeaderContainer().insert(index, column);
+    },
+
+    onColumnAdd: function(container, column) {
+        if (this.isPainted()) {
+            var items = this.listItems,
+                ln = items.length,
+                columnIndex = container.getColumns().indexOf(column),
+                i, row;
+
+            for (i = 0; i < ln; i++) {
+                row = items[i];
+                row.insertColumn(columnIndex, column);
+            }
+
+            this.updateTotalColumnWidth();
+
+            this.fireEvent('columnadd', this, column, columnIndex);
+        }
+    },
+
+    onColumnRemove: function(container, column) {
+        if (this.isPainted()) {
+            var items = this.listItems,
+                ln = items.length,
+                i, row;
+
+            for (i = 0; i < ln; i++) {
+                row = items[i];
+                row.removeColumn(column);
+            }
+
+            this.updateTotalColumnWidth();
+
+            this.fireEvent('columnremove', this, column);
+        }
+    },
+
+    updateColumns: function(columns) {
+        if (columns && columns.length) {
+            var ln = columns.length,
+                i;
+
+            for (i = 0; i < ln; i++) {
+                this.addColumn(columns[i]);
+            }
+
+            this.updateTotalColumnWidth();
+        }
+    },
+
+    getColumns: function() {
+        return this.getHeaderContainer().getColumns();
+    },
+
+    onColumnResize: function(container, column, width) {
+        var items = this.listItems,
+            ln = items.length,
+            i, row;
+
+        for (i = 0; i < ln; i++) {
+            row = items[i];
+            row.setColumnWidth(column, width);
+        }
+        this.updateTotalColumnWidth();
+
+        this.fireEvent('columnresize', column, width);
+    },
+
+    onColumnShow: function(container, column) {
+        var items = this.listItems,
+            ln = items.length,
+            i, row;
+
+        this.updateTotalColumnWidth();
+        for (i = 0; i < ln; i++) {
+            row = items[i];
+            row.showColumn(column);
+        }
+
+        this.fireEvent('columnshow', this, column);
+    },
+
+    onColumnHide: function(container, column) {
+        var items = this.listItems,
+            ln = items.length,
+            i, row;
+
+        for (i = 0; i < ln; i++) {
+            row = items[i];
+            row.hideColumn(column);
+        }
+        this.updateTotalColumnWidth();
+
+        this.fireEvent('columnhide', this, column);
+    },
+
+    onColumnSort: function(container, column, direction) {
+        if (this.sortedColumn && this.sortedColumn !== column) {
+            this.sortedColumn.setSortDirection(null);
+        }
+        this.sortedColumn = column;
+
+        this.getStore().sort(column.getDataIndex(), direction);
+
+        this.fireEvent('columnsort', this, column, direction);
+    },
+
+    getTotalColumnWidth: function() {
+        var me = this,
+            columns = me.getColumns(),
+            ln = columns.length,
+            totalWidth = 0,
+            i, column;
+
+        for (i = 0; i < ln; i++) {
+            column = columns[i];
+            if (!column.isHidden()) {
+                totalWidth += column.getWidth();
+            }
+        }
+
+        return totalWidth;
+    },
+
+    updateTotalColumnWidth: function() {
+        var me = this,
+            scroller = me.getScrollable().getScroller(),
+            totalWidth = this.getTotalColumnWidth();
+
+        me.scrollElement.setWidth(totalWidth);
+
+        scroller.setSize({
+            x: totalWidth,
+            y: scroller.getSize().y
+        });
+        scroller.refresh();
+    },
+
+    setScrollerHeight: function(height) {
+        var me = this,
+            scroller = me.container.getScrollable().getScroller();
+
+        if (height != scroller.givenSize.y) {
+            scroller.setSize({
+                x: scroller.givenSize.x,
+                y: height
+            });
+            scroller.refresh();
+        }
+    },
+
+    createItem: function(config) {
+        var me = this,
+            container = me.container,
+            listItems = me.listItems,
+            item;
+
+        config.grid = me;
+        item = Ext.factory(config);
+        item.dataview = me;
+        item.$height = config.minHeight;
+
+        container.doAdd(item);
+        listItems.push(item);
+
+        return item;
+    }
+});
+
 Ext.define('Ext.log.Base', {
     config: {},
 
@@ -66450,80 +70229,10 @@ Ext.define('Ext.viewport.Viewport', {
  * you should **not** use {@link Ext#onReady}.
  */
 
-Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,i=[],r=this.getP(),t=0;t<r.length;t++)n={},n.xtype=r[t].panel,n.iconCls="void",n.title=r[t].title,i.push(n);alert(Ext.encode(i));this.add(i)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
+Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.xtype=i[t].panel,n.iconCls="void",n.title=i[t].title,r.push(n);this.add(r)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
 //# sourceMappingURL=ChildPanel.min.js.map
 
-Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div class="project-header">','<tpl if="level &gt; 1">','<div class="row">','<tpl if="isParentAccessible==true">','<div class="parent-project"><p><a href="/sites/{parentProjectId}/Portal.aspx"><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/a><\/p><\/div>',"<tpl else>",'<div class="parent-project"><p><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/p><\/div>',"<\/tpl>","<\/div>","<\/tpl>",'<div class="row">','<div class="project-title <tpl if="level &gt; 1">has-parent<\/tpl>"><h2><span>{projectId} &ndash; <\/span> {projectName} <span class="product-group">{productGroupCode}<\/span><\/h2><\/div>','<div class="project-last-update"><span class="label">Updated:<\/span> <span class="value">{timeSpanFromLastUpdate}<\/span> <\/div>',"<\/div>",'<div class="row">','<div class="pm-pc">','<span class="label">Project Manager:<\/span> <span class="value">{projectManager}<\/span>','<span class="spacer">&nbsp;<\/span>','<span class="label">Product Champion:<\/span> <span class="value">{productChampion}<\/span>',"<\/div>","<\/div>","<\/div>"]}]}]},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var i=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",t=this.getParams();$.ajax(com.ajaxObject(n,t)).done(function(n){Ext.getCmp("theDataSummary").setData(n)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
-//# sourceMappingURL=Summary.min.js.map
-
-Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Requisitions",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
-//# sourceMappingURL=viewrequisitions.min.js.map
-
-Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Approvals",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
-//# sourceMappingURL=viewapprovals.min.js.map
-
-Ext.define('V2POC.view.requisition.Requisition', {
-    extend:  Ext.tab.Panel ,
-    id: 'theRequisition',
-    xtype: 'requisition',
-    initialize: function () {
-
-    },
-    config: {
-        listeners: {
-            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
-                var menu = Ext.create("Ext.Menu", {
-                    defaults: {
-                        xtype: "button"
-                    },
-                    width: '80%',
-                    scrollable: 'vertical',
-                    items: [
-                        {
-                            text: 'View Requisitions',
-                            listeners: {
-                                tap: function () {
-                                    Ext.getCmp('theRequisition').setActiveItem('viewrequisitions');
-                                    Ext.Viewport.hideAllMenus();
-                                }
-                            }
-                        },
-                        {
-                            text: 'View Approvals',
-                            listeners: {
-                                tap: function () {
-                                    Ext.getCmp('theRequisition').setActiveItem('viewapprovals');
-                                    Ext.Viewport.hideAllMenus();
-                                }
-                            }
-                        }
-                    ]
-                });
-
-                Ext.Viewport.setMenu(menu, {
-                    side: 'left',
-                    reveal: true
-                });
-            }
-        },
-        hideAnimation: 'fade',
-        tabBar: {
-            hidden: true,
-            dock: 'left',
-            scroll: 'horizontal',
-            sortable: true,
-            layout: {
-                pack: 'left'
-            }
-        },
-        items: [
-            { xtype: 'viewrequisitions' },
-            { xtype: 'viewapprovals' }
-        ]
-    }
-});
-
-Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",                                                                                                config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"organize",title:"projects",p:[{panel:"summary",title:"Project Summary"},{panel:"team",title:"Project Team"},{panel:"risks",title:"Project Risks"}]},{xtype:"childpanel",iconCls:"arrow_down",title:"requisitions",p:[{panel:"viewrequisitions",title:"View Requisitions"},{panel:"viewapprovals",title:"View Approvals"}]},{xtype:"requisition",iconCls:"star",title:"requisition"},{xtype:"childpanel",iconCls:"arrow_down",title:"misc",p:[{panel:"camera",title:"The Camera"},{panel:"team",title:"The Team"}]}]}});
+Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",                                                                   config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Project Summary"},{panel:"team",title:"Project Team"},{panel:"risks",title:"Project Risks"}]},{xtype:"childpanel",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"View Requisitions"},{panel:"viewapprovals",title:"View Approvals"}]},{xtype:"childpanel",iconCls:"favorites",title:"misc",p:[{panel:"camera",title:"The Camera"},{panel:"buttons",title:"The Buttons"}],id:"miscID"}]}});
 //# sourceMappingURL=Main.min.js.map
 
 Ext.define('V2POC.view.Tomatos', {
@@ -66607,359 +70316,26 @@ Ext.define('V2POC.view.Tomatos', {
 Ext.define("V2POC.view.base.MenuButton",{extend: Ext.Button ,xtype:"menubutton",config:{text:null,targetPanel:null,panel:null,listeners:{tap:function(){var n=this.getTargetPanel();n.setActiveItem(this.getPanel());Ext.Viewport.hideAllMenus()}}}});
 //# sourceMappingURL=MenuButton.min.js.map
 
-Ext.define('V2POC.view.project.Risks', {
-    extend:  Ext.Container ,
-    id: 'theRiskMatrix',
-                                        
-    xtype: 'risks',
+Ext.define("V2POC.view.project.Risks",{extend: Ext.Container ,id:"theRiskMatrix",                                                    xtype:"risks",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"dataview",id:"theRiskData",width:216,height:300,listeners:{scope:this,itemclick:function(n,t){var i=this.down("grid").store;i.clearFilter();i.filter("riskSeverity",t.data.severity);i.filter("riskOccurrence",t.data.occurrence)}},singleSelect:!0,overItemCls:"x-view-over",itemSelector:".clickable",emptyText:"No data available",deferInitialRefresh:!1,data:[{severity:1,occurrence:1,count:9},{severity:1,occurrence:2,count:1},{severity:1,occurrence:3,count:0},{severity:1,occurrence:4,count:0},{severity:1,occurrence:5,count:0},{severity:2,occurrence:1,count:3},{severity:2,occurrence:2,count:4},{severity:2,occurrence:3,count:6},{severity:2,occurrence:4,count:4},{severity:2,occurrence:5,count:0},{severity:3,occurrence:1,count:15},{severity:3,occurrence:2,count:13},{severity:3,occurrence:3,count:28},{severity:3,occurrence:4,count:3},{severity:3,occurrence:5,count:0},{severity:4,occurrence:1,count:7},{severity:4,occurrence:2,count:8},{severity:4,occurrence:3,count:3},{severity:4,occurrence:4,count:2},{severity:4,occurrence:5,count:0},{severity:5,occurrence:1,count:7},{severity:5,occurrence:2,count:2},{severity:5,occurrence:3,count:2},{severity:5,occurrence:4,count:0},{severity:5,occurrence:5,count:2}],tpl:new Ext.XTemplate('<div class="matrix">','<tpl for=".">',"<div>{severity} is {occurrence} years old<\/div>","<\/tpl>",'<div class="filter">',"<span>Filters<\/span>","<ul>",'<li class="insignificant" data-e-value="insignificant">&nbsp;<\/li>','<li class="low" data-e-value="low">&nbsp;<\/li>','<li class="medium" data-e-value="medium">&nbsp;<\/li>','<li class="high" data-e-value="high">&nbsp;<\/li>','<li class="extreme" data-e-value="extreme">&nbsp;<\/li>',"<\/ul>","<\/div>","<\/div>",{disableFormats:!0,doVal:function(n,t,i){var u=Ext.getCmp("theRiskMatrix"),r="";return t===1&&(r=r+'<ul class="row">'),r=i===0?r+'<li data-e-value="'+u.theColors[n-1][t-1]+'" class="clickable '+u.theColors[n-1][t-1]+'">&nbsp;&nbsp;<\/li>':r+'<li data-e-value="'+u.theColors[n-1][t-1]+'" class="clickable '+u.theColors[n-1][t-1]+'">&nbsp;'+i+"&nbsp;<\/li>",t===5&&(r=r+"<\/ul>"),r}})}]}]},theColors:[["insignificant","low","low","low","medium"],["low","low","medium","medium","high"],["low","medium","medium","high","high"],["low","medium","high","high","extreme"],["medium","high","high","extreme","extreme"]],clickableColors:["insignificant","low","medium","high","extreme"],currColor:"high",currentSelection:{insignificant:!1,low:!1,medium:!1,high:!0,extreme:!0},getData:function(){var t=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown";$.ajax(com.ajaxObject(n,{type:1,projectId:97370})).done(function(n){var t=Ext.create("Ext.data.Store",{fields:["count","occurrence","severity"],data:n.Matrix});Ext.getCmp("theRiskData").setStore(t)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});$(function(){$("body").on("click",".matrix .filter li",function(){var t=$(this).attr("data-e-value"),n=Ext.getCmp("dashboardPortletRiskMatrix");n.currentSelection[t]=!n.currentSelection[t];n.updateFilter(n)});$("body").on("click",".matrix ul.row li",function(){var t=$(this).attr("data-e-value");n();$(this).addClass("the-selected-"+t)});$("body").on("mouseover",".matrix .filter li",function(){var n=$(this).attr("data-e-value");$(".matrix ul.row li."+n).addClass("the-hover-"+n)}).on("mouseout",".matrix .filter li",function(){var n=$(this).attr("data-e-value");$(".matrix ul.row li."+n).removeClass("the-hover-"+n)});var n=function(){rm=Ext.getCmp("dashboardPortletRiskMatrix");for(var n in rm.currentSelection)rm.currentSelection[n]=!1;$(".matrix li").removeClass(function(n,t){var r=t.split(" "),i=[];return $.each(r,function(n,t){/the-selected.*/.test(t)&&i.push(t)}),i.join(" ")})}});
+//# sourceMappingURL=Risks.min.js.map
 
-    initialize: function () {
-        this.items.items[0].setTitle(this.title);
-        this.callParent();
-        //this.getData();
-    },
+Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div class="project-header">','<tpl if="level &gt; 1">','<div class="row">','<tpl if="isParentAccessible==true">','<div class="parent-project"><p><a href="/sites/{parentProjectId}/Portal.aspx"><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/a><\/p><\/div>',"<tpl else>",'<div class="parent-project"><p><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/p><\/div>',"<\/tpl>","<\/div>","<\/tpl>",'<div class="row">','<div class="project-title <tpl if="level &gt; 1">has-parent<\/tpl>"><h2><span>{projectId} &ndash; <\/span> {projectName} <span class="product-group">{productGroupCode}<\/span><\/h2><\/div>','<div class="project-last-update"><span class="label">Updated:<\/span> <span class="value">{timeSpanFromLastUpdate}<\/span> <\/div>',"<\/div>",'<div class="row">','<div class="pm-pc">','<span class="label">Project Manager:<\/span> <span class="value">{projectManager}<\/span>','<span class="spacer">&nbsp;<\/span>','<span class="label">Product Champion:<\/span> <span class="value">{productChampion}<\/span>',"<\/div>","<\/div>","<\/div>"]}]}]},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var i=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",t=this.getParams();$.ajax(com.ajaxObject(n,t)).done(function(n){Ext.getCmp("theDataSummary").setData(n)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
+//# sourceMappingURL=Summary.min.js.map
 
-    create: function () {
-    },
+Ext.create("Ext.data.Store",{storeId:"simpsonsStore",fields:["name","email","phone"],data:{items:[{name:"Lisa",email:"lisa@simpsons.com",phone:"555-111-1224"},{name:"Bart",email:"bart@simpsons.com",phone:"555-222-1234"},{name:"Homer",email:"home@simpsons.com",phone:"555-222-1244"},{name:"Marge",email:"marge@simpsons.com",phone:"555-222-1254"}]}});Ext.define("V2POC.view.project.Team",{extend: Ext.Panel ,xtype:"team",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"Project Team",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]},{xtype:"grid",title:"Simpsons",store:Ext.data.StoreManager.lookup("simpsonsStore"),columns:[{text:"Name",dataIndex:"name",width:200},{text:"Email",dataIndex:"email",width:250},{text:"Phone",dataIndex:"phone",width:120}],height:200,width:400}]}});
+//# sourceMappingURL=Team.min.js.map
 
-    theColors: [
-        ['insignificant', 'low', 'low', 'low', 'medium'],
-        ['low', 'low', 'medium', 'medium', 'high'],
-        ['low', 'medium', 'medium', 'high', 'high'],
-        ['low', 'medium', 'high', 'high', 'extreme'],
-        ['medium', 'high', 'high', 'extreme', 'extreme']
-    ],
+Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Requisitions",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
+//# sourceMappingURL=viewrequisitions.min.js.map
 
-    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
-    currColor: 'high', //'extreme',
-    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
+Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Approvals",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
+//# sourceMappingURL=viewapprovals.min.js.map
 
-    getData: function () {
-        var me = this;
-        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
-        var theParms = { type: 1, projectId: 97370 };
-        $.ajax(com.ajaxObject(theUrl, theParms))
-        .done(function (data) {
-            var storeMatrix = Ext.create('Ext.data.Store', {
-                fields: ['count', 'occurrence', 'severity'],
-                data: data.Matrix
-            });
-            Ext.getCmp('theRiskData').setStore(storeMatrix);
-            //Ext.getCmp('theRiskData').refresh();
-        })
-        .fail(function (data) {
-            throw data.status + '-' + data.statusText + ': ' + theUrl;
-        });
-    },
+Ext.define("V2POC.view.misc.Camera",{extend: Ext.Panel ,xtype:"camera",                     initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"image",src:"http://plascehold.it/200x200",width:200,height:200},{xtype:"button",text:"Photo",handler:function(){function n(n){var t=Ext.ComponentQuery.query("image")[0];t.setSrc(n)}function t(n){alert(n)}navigator.camera.getPicture(n,t,{quality:50,destinationType:navigator.camera.DestinationType.FILE_URI,sourceType:navigator.camera.PictureSourceType.PHOTOLIBRARY})}}]}});
+//# sourceMappingURL=Camera.min.js.map
 
-    config: {
-        layout: 'vbox',
-        items: [
-            com.getHeader(),
-            {
-                xtype: 'container',
-                layout: 'hbox',
-                items: [
-                        {
-
-                            xtype: 'dataview',
-                            id: 'theRiskData',
-                            width: 216,
-                            height: 300,
-                            listeners: {
-                                scope: this,
-                                itemclick: function (dataview, record, item, index, e, eOpts) {
-                                    var store = this.down('grid').store;
-                                    store.clearFilter();
-                                    store.filter("riskSeverity", record.data.severity);
-                                    store.filter("riskOccurrence", record.data.occurrence);
-                                }
-
-                            },
-                            singleSelect: true,
-                            overItemCls: 'x-view-over',
-                            itemSelector: '.clickable',
-                            emptyText: 'No data available',
-                            deferInitialRefresh: false,
-
-                            //itemTpl: '<div> {severity} {occurrence} {count} </div>',
-
-            //                store: {
-            //                    fields: ['severity', 'occurrence', 'count'],
-
-            //                },
-
-
-                                data: [
-            {
-                "severity": 1,
-                "occurrence": 1,
-                "count": 9
-            },
-            {
-                "severity": 1,
-                "occurrence": 2,
-                "count": 1
-            },
-            {
-                "severity": 1,
-                "occurrence": 3,
-                "count": 0
-            },
-            {
-                "severity": 1,
-                "occurrence": 4,
-                "count": 0
-            },
-            {
-                "severity": 1,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 2,
-                "occurrence": 1,
-                "count": 3
-            },
-            {
-                "severity": 2,
-                "occurrence": 2,
-                "count": 4
-            },
-            {
-                "severity": 2,
-                "occurrence": 3,
-                "count": 6
-            },
-            {
-                "severity": 2,
-                "occurrence": 4,
-                "count": 4
-            },
-            {
-                "severity": 2,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 3,
-                "occurrence": 1,
-                "count": 15
-            },
-            {
-                "severity": 3,
-                "occurrence": 2,
-                "count": 13
-            },
-            {
-                "severity": 3,
-                "occurrence": 3,
-                "count": 28
-            },
-            {
-                "severity": 3,
-                "occurrence": 4,
-                "count": 3
-            },
-            {
-                "severity": 3,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 4,
-                "occurrence": 1,
-                "count": 7
-            },
-            {
-                "severity": 4,
-                "occurrence": 2,
-                "count": 8
-            },
-            {
-                "severity": 4,
-                "occurrence": 3,
-                "count": 3
-            },
-            {
-                "severity": 4,
-                "occurrence": 4,
-                "count": 2
-            },
-            {
-                "severity": 4,
-                "occurrence": 5,
-                "count": 0
-            },
-            {
-                "severity": 5,
-                "occurrence": 1,
-                "count": 7
-            },
-            {
-                "severity": 5,
-                "occurrence": 2,
-                "count": 2
-            },
-            {
-                "severity": 5,
-                "occurrence": 3,
-                "count": 2
-            },
-            {
-                "severity": 5,
-                "occurrence": 4,
-                "count": 0
-            },
-            {
-                "severity": 5,
-                "occurrence": 5,
-                "count": 2
-            }
-                                ],
-
-
-                            tpl: new Ext.XTemplate(
-                                '<div class="matrix">',
-                                '<tpl for=".">',
-                                '<div>{severity} is {occurrence} years old</div>',
-                                //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
-                                '</tpl>',
-                                '<div class="filter">',
-                                    '<span>Filters</span>',
-                                    '<ul>',
-                                        '<li class="insignificant" data-e-value="insignificant">&nbsp;</li>',
-                                        '<li class="low" data-e-value="low">&nbsp;</li>',
-                                        '<li class="medium" data-e-value="medium">&nbsp;</li>',
-                                        '<li class="high" data-e-value="high">&nbsp;</li>',
-                                        '<li class="extreme" data-e-value="extreme">&nbsp;</li>',
-                                    '</ul>',
-                                '</div>',
-                                '</div>',
-                                {
-                                    disableFormats: true,
-                                    doVal: function (r, c, v) {
-                                        //debugger;
-                                        var rm = Ext.getCmp('theRiskMatrix');
-                                        var s = '';
-                                        if (c === 1) {
-                                            s = s + '<ul class="row">';
-                                        }
-                                        if (v === 0) {
-                                            s = s + '<li data-e-value="' + rm.theColors[r - 1][c - 1] + '" class="clickable ' + rm.theColors[r - 1][c - 1] + '">&nbsp;' + '' + '&nbsp;</li>';
-                                        } else {
-                                            s = s + '<li data-e-value="' + rm.theColors[r - 1][c - 1] + '" class="clickable ' + rm.theColors[r - 1][c - 1] + '">&nbsp;' + v + '&nbsp;</li>';
-                                        }
-                                        if (c === 5) {
-                                            s = s + '</ul>';
-                                        }
-                                        return s;
-                                    }
-                                }
-                            )
-                        }
-                ]
-            }
-        ]
-    }
-});
-
-$(function () {
-
-    $('body').on('click', '.matrix .filter li', function () {
-        var type = $(this).attr('data-e-value'),
-            rm = Ext.getCmp('dashboardPortletRiskMatrix');
-
-        rm.currentSelection[type] = !rm.currentSelection[type];
-        rm.updateFilter(rm);
-
-    });
-
-    $('body').on('click', '.matrix ul.row li', function () {
-        var color = $(this).attr('data-e-value');
-        clearSelection();
-
-        $(this).addClass('the-selected-' + color);
-
-    });
-
-    // filters
-    $('body').on('mouseover', '.matrix .filter li', function () {
-        var type = $(this).attr('data-e-value');
-        $('.matrix ul.row li.' + type).addClass('the-hover-' + type);
-
-    }).on('mouseout', '.matrix .filter li', function () {
-        var type = $(this).attr('data-e-value');
-        $('.matrix ul.row li.' + type).removeClass('the-hover-' + type);
-    });
-
-    var clearSelection = function () {
-        rm = Ext.getCmp('dashboardPortletRiskMatrix');
-
-        for (var item in rm.currentSelection) {
-            rm.currentSelection[item] = false;
-        }
-
-        $('.matrix li').removeClass(function (index, classNames) {
-            var currentClasses = classNames.split(" "),
-                classesToRemove = [];
-
-            $.each(currentClasses, function (index, className) {
-                if (/the-selected.*/.test(className)) {
-                    classesToRemove.push(className);
-                }
-            });
-
-            return classesToRemove.join(" ");
-        });
-
-    };
-
-});
-
-Ext.define('V2POC.view.project.Team', {
-    extend:  Ext.Panel ,
-    xtype: 'team',
-    config: {
-        layout: 'vbox',
-        iconCls: 'void',
-        items: [
-             {
-                 xtype: "toolbar",
-                 title: 'Project Team',
-                 items: [
-                    {
-                        iconCls: "list",
-                        ui: "plain",
-                        left: 0,
-                        listeners: {
-                            tap: function () {
-                                Ext.Viewport.toggleMenu("left");
-                            }
-                        }
-                    }
-                 ]
-             },
-            {
-                xtype: 'container',
-                layout: 'hbox',
-                items: [
-                    { xtype: 'container', html: '1' },
-                    { xtype: 'container', html: '2' }
-
-                ]
-            }
-        ]
-    }
-});
-
-Ext.define('V2POC.view.misc.Misc', {
-    extend:  V2POC.view.base.ChildPanel ,
-    xtype: 'misc'
-});
-
-Ext.define("V2POC.view.misc.Camera",{extend: Ext.Panel ,xtype:"camera",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"image",src:"http://plascehold.it/200x200",width:200,height:200},{xtype:"button",text:"Photo",handler:function(){function n(n){var t=Ext.ComponentQuery.query("image")[0];t.setSrc(n)}function t(n){alert(n)}navigator.camera.getPicture(n,t,{quality:50,destinationType:navigator.camera.DestinationType.FILE_URI,sourceType:navigator.camera.PictureSourceType.PHOTOLIBRARY})}}]}});
-//# sourceMappingURL=camera.min.js.map
+Ext.define("V2POC.view.misc.Buttons",{extend: Ext.Panel ,xtype:"buttons",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{text:"New Window",xtype:"button",width:250,height:50,listeners:{tap:function(){var n=window.open("http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx","_blank","location=no")}}},{text:"Set Badge Text",xtype:"button",width:250,height:50,listeners:{tap:function(){var n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown",t=this;$.ajax(com.ajaxObject(n,{type:1,projectId:97370},!1)).fail(function(t){throw t.status+"-"+t.statusText+": "+n;}).done(function(){var t=Ext.getCmp("miscID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal)})}}}]}});
+//# sourceMappingURL=Buttons.min.js.map
 
 /*
     This file is generated and updated by Sencha Cmd. You can edit this file as
@@ -66984,16 +70360,19 @@ Ext.application({
     views: [
         'Main',
         'Tomatos',
+
         'base.MenuButton',
         'base.ChildPanel',
+
         'project.Risks',
         'project.Summary',
         'project.Team',
-        'requisition.Requisition',
+
         'requisition.ViewRequisitions',
         'requisition.ViewApprovals',
-        'misc.Misc',
-        'misc.Camera'
+
+        'misc.Camera',
+        'misc.Buttons'
     ],
 
     icon: {
@@ -81092,6 +84471,17 @@ Ext.define('V2POC.com', {
                }
             ]
         }
+    },
+
+    whatAmI: function () {
+        var is = '';
+        if (Ext.os.is.Tablet != undefined) {
+            is += Ext.os.is.Tablet + ';';
+        }
+        if (Ext.os.is.Phone != undefined) {
+            is += Ext.os.is.Phone + ';';
+        }
+        return is;
     }
 
 });

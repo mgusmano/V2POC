@@ -25,7 +25,9 @@ Ext.application({
         'base.MenuButton',
         'base.ChildPanel',
 
-        'project.Risks',
+        'project.RiskMatrix',
+        'project.RisksGrid',
+        'project.RisksDataview',
         'project.Summary',
         'project.Team',
 
@@ -33,7 +35,8 @@ Ext.application({
         'requisition.ViewApprovals',
 
         'misc.Camera',
-        'misc.Buttons'
+        'misc.Buttons',
+        'misc.Test'
     ],
 
     icon: {

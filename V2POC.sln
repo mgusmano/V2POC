@@ -24,6 +24,27 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "http://localhost:214", "htt
 		SlnRelativePath = "..\V2POC\"
 	EndProjectSection
 EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "http://localhost:230", "http://localhost:230", "{B142EB22-E4EF-4FC3-9E88-73F8B7A2169D}"
+	ProjectSection(WebsiteProperties) = preProject
+		UseIISExpress = "false"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv2.0"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_230"
+		Debug.AspNetCompiler.PhysicalPath = "..\..\Users\Marc\Desktop\MobileDev\touch-2.3.0\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_230\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_230"
+		Release.AspNetCompiler.PhysicalPath = "..\..\Users\Marc\Desktop\MobileDev\touch-2.3.0\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_230\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		SlnRelativePath = "..\..\Users\Marc\Desktop\MobileDev\touch-2.3.0\"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +52,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{350AADF9-067F-421B-B4FD-1EDBA96B211B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{350AADF9-067F-421B-B4FD-1EDBA96B211B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B142EB22-E4EF-4FC3-9E88-73F8B7A2169D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B142EB22-E4EF-4FC3-9E88-73F8B7A2169D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

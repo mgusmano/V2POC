@@ -7,12 +7,10 @@ Ext.define('V2POC.view.Main', {
         'V2POC.view.base.ChildPanel'
     ],
 
-
-
     config: {
         tabBarPosition: 'bottom',
         items: [
-            { xtype: 'childpanel', iconCls: 'team', title: 'projects', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'risks', title: 'Project Risks' }] },
+            { xtype: 'childpanel', iconCls: 'team', title: 'projects', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'riskmatrix', title: 'Project Risks Matrix' }, { panel: 'risksgrid', title: 'Project Risks Grid' }, { panel: 'risksdataview', title: 'Project Risks Dataview' }] },
             { xtype: 'childpanel', iconCls: 'organize', title: 'requisitions', p: [{ panel: 'viewrequisitions', title: 'View Requisitions' }, { panel: 'viewapprovals', title: 'View Approvals' }] },
             { xtype: 'childpanel', iconCls: 'favorites', title: 'misc', p: [{ panel: 'camera', title: 'The Camera' }, { panel: 'buttons', title: 'The Buttons' }], id: 'miscID' }
 

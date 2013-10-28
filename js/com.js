@@ -30,7 +30,63 @@ Ext.define('V2POC.com', {
             defaults: { xtype: "menubutton" },
             width: '80%',
             scrollable: 'vertical',
-            items: items
+            layout: 'vbox',
+            style: {
+                backgroundColor: 'green'
+            },
+            items: items,
+            xitems: [
+                {
+                    xtype: 'dataview',
+                    flex:1,
+                    //width: 216,
+                    //height: 300,
+                    listeners: {
+                        scope: this,
+                        itemtap: function (dataview, record, item, index, e, eOpts) {
+                            alert('hi');
+                            //var store = this.down('grid').store;
+                            //store.clearFilter();
+                            //store.filter("riskSeverity", record.data.severity);
+                            //store.filter("riskOccurrence", record.data.occurrence);
+                        }
+                    },
+                    singleSelect: true,
+                    //overItemCls: 'x-view-over',
+                    itemSelector: '.clickable',
+                    //emptyText: 'No data available',
+                    //deferInitialRefresh: false,
+
+                    store: {
+                        fields: ['severity', 'occurrence', 'count'],
+                        data: [
+                            {
+                                "severity": 1,
+                                "occurrence": 1,
+                                "count": 9
+                            },
+                            {
+                                "severity": 1,
+                                "occurrence": 2,
+                                "count": 1
+                            },
+                            {
+                                "severity": 1,
+                                "occurrence": 3,
+                                "count": 0
+                            }
+                        ]
+                    },
+                    itemTpl: '<div class="clickable" style="color:#ff0000"> {severity} {occurrence} {count} </div>',
+
+                    cctpl: new Ext.XTemplate(
+                            '<tpl for=".">',
+                            '<div>{severity} is {occurrence} years old</div>',
+                            //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
+                            '</tpl>'
+                        )
+                }
+            ]
         });
         Ext.Viewport.setMenu(menu, { side: 'left', reveal: true });
     },

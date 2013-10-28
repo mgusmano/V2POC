@@ -19,6 +19,8 @@ Ext.Loader.addClassPathMappings({
   "Ext.draw.engine.SvgContext.Gradient": "touch/src/draw/engine/SvgContext.js",
   "V2POC": "app",
   "V2POC.com": "js/com.js",
+  "V2POC.view.misc.TestListItem": "app/view/misc/Test.js",
+  "V2POC.view.project.Risks": "app/view/project/Risks.min.js",
   "V2POC.view.requisition.ViewRequisitions": "app/view/requisition/ViewrRequisitions.js"
 });
 Ext.ClassManager.addNameAlternateMappings({
@@ -606,6 +608,13 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.fx.runner.Css": [],
   "Ext.fx.runner.CssAnimation": [],
   "Ext.fx.runner.CssTransition": [],
+  "Ext.grid.Grid": [],
+  "Ext.grid.HeaderContainer": [],
+  "Ext.grid.HeaderGroup": [],
+  "Ext.grid.Row": [],
+  "Ext.grid.column.Column": [],
+  "Ext.grid.column.Date": [],
+  "Ext.grid.column.Template": [],
   "Ext.layout.Abstract": [],
   "Ext.layout.Box": [],
   "Ext.layout.Card": [],
@@ -755,7 +764,12 @@ Ext.ClassManager.addNameAlternateMappings({
   "V2POC.view.misc.Buttons": [],
   "V2POC.view.misc.Camera": [],
   "V2POC.view.misc.Misc": [],
+  "V2POC.view.misc.Test": [],
+  "V2POC.view.misc.TestListItem": [],
+  "V2POC.view.project.RiskMatrix": [],
   "V2POC.view.project.Risks": [],
+  "V2POC.view.project.RisksDataview": [],
+  "V2POC.view.project.RisksGrid": [],
   "V2POC.view.project.Summary": [],
   "V2POC.view.project.Team": [],
   "V2POC.view.requisition.ViewApprovals": [],
@@ -1527,6 +1541,27 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.fx.runner.Css": [],
   "Ext.fx.runner.CssAnimation": [],
   "Ext.fx.runner.CssTransition": [],
+  "Ext.grid.Grid": [
+    "widget.grid"
+  ],
+  "Ext.grid.HeaderContainer": [
+    "widget.headercontainer"
+  ],
+  "Ext.grid.HeaderGroup": [
+    "widget.gridheadergroup"
+  ],
+  "Ext.grid.Row": [
+    "widget.gridrow"
+  ],
+  "Ext.grid.column.Column": [
+    "widget.column"
+  ],
+  "Ext.grid.column.Date": [
+    "widget.datecolumn"
+  ],
+  "Ext.grid.column.Template": [
+    "widget.templatecolumn"
+  ],
   "Ext.layout.Abstract": [],
   "Ext.layout.Box": [
     "layout.tablebox"
@@ -1719,8 +1754,23 @@ Ext.ClassManager.addNameAliasMappings({
   "V2POC.view.misc.Misc": [
     "widget.misc"
   ],
+  "V2POC.view.misc.Test": [
+    "widget.test"
+  ],
+  "V2POC.view.misc.TestListItem": [
+    "widget.testlistitem"
+  ],
+  "V2POC.view.project.RiskMatrix": [
+    "widget.riskmatrix"
+  ],
   "V2POC.view.project.Risks": [
     "widget.risks"
+  ],
+  "V2POC.view.project.RisksDataview": [
+    "widget.risksdataview"
+  ],
+  "V2POC.view.project.RisksGrid": [
+    "widget.risksgrid"
   ],
   "V2POC.view.project.Summary": [
     "widget.summary"
