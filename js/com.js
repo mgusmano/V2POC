@@ -28,13 +28,22 @@ Ext.define('V2POC.com', {
     setMenu: function (items) {
         var menu = Ext.create("Ext.Menu", {
             defaults: { xtype: "menubutton" },
-            width: '80%',
+            //width: '80%',
+            width: '265px',
             scrollable: 'vertical',
+            cls: 'mainmenu',
             layout: 'vbox',
-            style: {
-                backgroundColor: 'green'
-            },
+            //style: {
+            //    backgroundColor: 'green'
+            //},
             items: items,
+
+
+            //items: [{ margin: "85 0 0 0", text: "Schedule", ui: "mainmenu", href: "#sessions", iconCls: "ico-schedule" }, { text: "Speakers", ui: "mainmenu", href: "#speakers", iconCls: "ico-speakers" }, { text: "Sponsors", ui: "mainmenu", href: "#sponsors", iconCls: "ico-sponsors" }, { text: "Maps", ui: "mainmenu", iconCls: "ico-maps", href: "#maps" }, { text: "Conference Activities", ui: "mainmenu", iconCls: "ico-activities", href: "#activities" }, { text: "More Info", ui: "mainmenu", iconCls: "ico-info", href: "#info" }, { xtype: "component", cls: "divider", html: "Social" }, { text: "@SamsungDevUS", ui: "mainmenu", href: "#feed", iconCls: "ico-feed" }, { text: "#sdc13", ui: "mainmenu", href: "#tweets", iconCls: "ico-twitter" }],
+
+
+
+
             xitems: [
                 {
                     xtype: 'dataview',
@@ -94,6 +103,7 @@ Ext.define('V2POC.com', {
     getHeader: function () {
         return  {
             xtype: "toolbar",
+            dock: 'top',
             items: [
                {
                    iconCls: "list",

@@ -33,6 +33,9 @@ Ext.define('V2POC.view.base.ChildPanel', {
                     theButton.panel = p[i].panel;
                     theButton.text = p[i].title;
                     theButton.targetPanel = this;
+                    if (i === 0) {
+                        theButton.margin = '90 0 0.7em 0';
+                    }
                     theMenu.push(theButton)
                 }
                 com.setMenu(theMenu);

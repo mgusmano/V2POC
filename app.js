@@ -64,6 +64,53 @@ Ext.application({
         // Destroy the #appLoadingIndicator element
         Ext.fly('appLoadingIndicator').destroy();
 
+        Ext.Viewport.bodyElement.on('resize', Ext.emptyFn, this, { buffer: 1 });
+
+        Ext.Viewport.on('orientationchange', function (me, orientation, width, height, eOpts) {
+
+            //function alertDismissed() {
+            //    // do something
+            //};
+
+            //navigator.notification.alert(
+            //    orientation,  // message
+            //    alertDismissed,         // callback
+            //    'orientation',            // title
+            //    'Done'                  // buttonName
+            //);
+
+            if (orientation == 'portrait') {
+                dock = 'top';
+                Ext.getCmp('main').setTabBar({ hidden: false });
+                Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(250);
+                document.getElementById('theOverall').style.display = 'block'
+                document.getElementById('theMatrix').style.display = 'block'
+                document.getElementById('theFilter').style.display = 'block'
+
+            }
+            else {
+                dock = 'left';
+                Ext.getCmp('main').setTabBar({ hidden: true });
+           }
+            //alert(this.getItems().items[1]);
+            Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setDocked(dock);
+
+        });
+
+
+        //if (Ext.os.is.Android) {
+        //        Ext.Msg.alert('orientationApp', orientation);
+        //        Ext.Viewport.setSize(window.innerWidth, window.innerHeight);
+        //    }
+        //});
+
+        //Ext.device.Orientation.on({
+        //    scope: this,
+        //    orientationchange: function (e) {
+        //        Ext.Msg.alert('Ext.device.Orientation', e.alpha + '-' + e.beta + '-' + e.gamma);
+        //    }
+        //});
+
         // Initialize the main view
         Ext.Viewport.add(Ext.create('V2POC.view.Main'));
 
@@ -81,3 +128,6 @@ Ext.application({
         );
     }
 });
+
+
+

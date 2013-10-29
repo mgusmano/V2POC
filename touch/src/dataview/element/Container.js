@@ -200,7 +200,6 @@ Ext.define('Ext.dataview.element.Container', {
             childNodes = element.dom.childNodes,
             ln         = childNodes.length,
             wrapElement;
-
         data.xcount = typeof data.xcount === 'number' ? data.xcount : store.getCount();
         data.xindex = typeof data.xindex === 'number' ? data.xindex : index;
 

@@ -1,0 +1,9 @@
+﻿.mainmenu {
+background: #1a1818 url(resources/icons/logo-menu.png) no-repeat;
+background-size: 265px 83px;
+-moz-background-size: 265px 83px;
+-o-background-size: 265px 83px;
+-webkit-background-size: 265px 83px;
+border-right: 2px solid #000;
+padding: 0;
+}

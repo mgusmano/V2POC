@@ -51,6 +51,7 @@
     <gap:plugin name="org.apache.cordova.inappbrowser" />
     <gap:plugin name="org.apache.cordova.console" />  
     <gap:plugin name="org.apache.cordova.device" />
+    <gap:plugin name="org.apache.cordova.dialogs" />
   
     <access origin="http://127.0.0.1*" />
     <access origin="http://placehold.it*" />

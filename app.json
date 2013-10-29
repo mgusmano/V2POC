@@ -112,13 +112,13 @@
         {
             "path": "touch/resources/css/sencha-touch.css",
             "platform": ["desktop", "firefox", "tizen"],
-            "exclude": ["ie10", "windows"],
+            "exclude": ["ie10", "windows", "iosx", "androidx"],
             "theme": "Default",
             "update": "delta"
         },
         {
             "path": "touch/resources/css/cupertino.css",
-            "platform": ["iosx"],
+            "platform": ["iosx", "androidx"],
             "theme": "ios",
             "update": "delta"
         },
@@ -138,7 +138,13 @@
         {
             "path": "emspeed-all.css",
             "update": "delta"
-        }    ],
+        },
+        {
+            "path": "V2POC.css",
+			"remote": true,
+            "update": "delta"
+        } 	
+	],
 
     /**
      * Used to automatically generate cache.manifest (HTML 5 application cache manifest) file when you build

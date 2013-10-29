@@ -49473,7 +49473,6 @@ Ext.define('Ext.dataview.element.Container', {
             childNodes = element.dom.childNodes,
             ln         = childNodes.length,
             wrapElement;
-
         data.xcount = typeof data.xcount === 'number' ? data.xcount : store.getCount();
         data.xindex = typeof data.xindex === 'number' ? data.xindex : index;
 
@@ -65315,6 +65314,637 @@ Ext.define('Ext.event.recognizer.Tap', {
 
 /**
  * @private
+ * Utility class used by Ext.slider.Slider - should never need to be used directly.
+ */
+Ext.define('Ext.slider.Thumb', {
+    extend:  Ext.Component ,
+    xtype : 'thumb',
+
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'thumb',
+
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        draggable: {
+            direction: 'horizontal'
+        }
+    },
+
+    // Strange issue where the thumbs translation value is not being set when it is not visible. Happens when the thumb 
+    // is contained within a modal panel.
+    platformConfig: [{
+        platform: ['ie10'],
+        draggable: {
+            translatable: {
+                translationMethod: 'csstransform'
+            }
+        }
+    }],
+
+    elementWidth: 0,
+
+    initialize: function() {
+        this.callParent();
+
+        this.getDraggable().onBefore({
+            dragstart: 'onDragStart',
+            drag: 'onDrag',
+            dragend: 'onDragEnd',
+            scope: this
+        });
+
+        this.element.on('resize', 'onElementResize', this);
+    },
+
+    onDragStart: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+
+        this.relayEvent(arguments);
+    },
+
+    onDrag: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+
+        this.relayEvent(arguments);
+    },
+
+    onDragEnd: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+
+        this.relayEvent(arguments);
+    },
+
+    onElementResize: function(element, info) {
+        this.elementWidth = info.width;
+    },
+
+    getElementWidth: function() {
+        return this.elementWidth;
+    }
+});
+
+/**
+ * Utility class used by Ext.field.Slider.
+ * @private
+ */
+Ext.define('Ext.slider.Slider', {
+    extend:  Ext.Container ,
+    xtype: 'slider',
+
+               
+                           
+                               
+      
+
+    /**
+    * @event change
+    * Fires when the value changes
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being changed
+    * @param {Number} newValue The new value
+    * @param {Number} oldValue The old value
+    */
+
+    /**
+    * @event dragstart
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Array} value The start value
+    * @param {Ext.EventObject} e
+    */
+
+    /**
+    * @event drag
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Ext.EventObject} e
+    */
+
+    /**
+    * @event dragend
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Array} value The end value
+    * @param {Ext.EventObject} e
+    */
+    config: {
+        baseCls: 'x-slider',
+
+        /**
+         * @cfg {Object} thumbConfig The config object to factory {@link Ext.slider.Thumb} instances
+         * @accessor
+         */
+        thumbConfig: {
+            draggable: {
+                translatable: {
+                    easingX: {
+                        duration: 300,
+                        type: 'ease-out'
+                    }
+                }
+            }
+        },
+
+        /**
+         * @cfg {Number} increment The increment by which to snap each thumb when its value changes. Any thumb movement
+         * will be snapped to the nearest value that is a multiple of the increment (e.g. if increment is 10 and the user
+         * tries to move the thumb to 67, it will be snapped to 70 instead)
+         * @accessor
+         */
+        increment : 1,
+
+        /**
+         * @cfg {Number/Number[]} value The value(s) of this slider's thumbs. If you pass
+         * a number, it will assume you have just 1 thumb.
+         * @accessor
+         */
+        value: 0,
+
+        /**
+         * @cfg {Number} minValue The lowest value any thumb on this slider can be set to.
+         * @accessor
+         */
+        minValue: 0,
+
+        /**
+         * @cfg {Number} maxValue The highest value any thumb on this slider can be set to.
+         * @accessor
+         */
+        maxValue: 100,
+
+        /**
+         * @cfg {Boolean} allowThumbsOverlapping Whether or not to allow multiple thumbs to overlap each other.
+         * Setting this to true guarantees the ability to select every possible value in between {@link #minValue}
+         * and {@link #maxValue} that satisfies {@link #increment}
+         * @accessor
+         */
+        allowThumbsOverlapping: false,
+
+        /**
+         * @cfg {Boolean/Object} animation
+         * The animation to use when moving the slider. Possible properties are:
+         *
+         * - duration
+         * - easingX
+         * - easingY
+         *
+         * @accessor
+         */
+        animation: true,
+
+        /**
+         * Will make this field read only, meaning it cannot be changed with used interaction.
+         * @cfg {Boolean} readOnly
+         * @accessor
+         */
+        readOnly: false
+    },
+
+    /**
+     * @cfg {Number/Number[]} values Alias to {@link #value}
+     */
+
+    elementWidth: 0,
+
+    offsetValueRatio: 0,
+
+    activeThumb: null,
+
+    constructor: function(config) {
+        config = config || {};
+
+        if (config.hasOwnProperty('values')) {
+            config.value = config.values;
+        }
+
+        this.callParent([config]);
+    },
+
+    // @private
+    initialize: function() {
+        var element = this.element;
+
+        this.callParent();
+
+        element.on({
+            scope: this,
+            tap: 'onTap',
+            resize: 'onResize'
+        });
+
+        this.on({
+            scope: this,
+            delegate: '> thumb',
+            tap: 'onTap',
+            dragstart: 'onThumbDragStart',
+            drag: 'onThumbDrag',
+            dragend: 'onThumbDragEnd'
+        });
+
+        var thumb = this.getThumb(0);
+        if(thumb) {
+            thumb.on('resize', 'onThumbResize', this);
+        }
+    },
+
+    /**
+     * @private
+     */
+    factoryThumb: function() {
+        return Ext.factory(this.getThumbConfig(), Ext.slider.Thumb);
+    },
+
+    /**
+     * Returns the Thumb instances bound to this Slider
+     * @return {Ext.slider.Thumb[]} The thumb instances
+     */
+    getThumbs: function() {
+        return this.innerItems;
+    },
+
+    /**
+     * Returns the Thumb instance bound to this Slider
+     * @param {Number} [index=0] The index of Thumb to return.
+     * @return {Ext.slider.Thumb} The thumb instance
+     */
+    getThumb: function(index) {
+        if (typeof index != 'number') {
+            index = 0;
+        }
+
+        return this.innerItems[index];
+    },
+
+    refreshOffsetValueRatio: function() {
+        var valueRange = this.getMaxValue() - this.getMinValue(),
+            trackWidth = this.elementWidth - this.thumbWidth;
+
+        this.offsetValueRatio = trackWidth / valueRange;
+    },
+
+    onThumbResize: function(){
+        var thumb = this.getThumb(0);
+        if (thumb) {
+            this.thumbWidth = thumb.getElementWidth();
+        }
+        this.refresh();
+    },
+
+    onResize: function(element, info) {
+        this.elementWidth = info.width;
+        this.refresh();
+    },
+
+    refresh: function() {
+        this.refreshValue();
+    },
+
+    setActiveThumb: function(thumb) {
+        var oldActiveThumb = this.activeThumb;
+
+        if (oldActiveThumb && oldActiveThumb !== thumb) {
+            oldActiveThumb.setZIndex(null);
+        }
+
+        this.activeThumb = thumb;
+        thumb.setZIndex(2);
+
+        return this;
+    },
+
+    onThumbDragStart: function(thumb, e) {
+        if (e.absDeltaX <= e.absDeltaY || this.getReadOnly()) {
+            return false;
+        }
+        else {
+            e.stopPropagation();
+        }
+
+        if (this.getAllowThumbsOverlapping()) {
+            this.setActiveThumb(thumb);
+        }
+
+        this.dragStartValue = this.getValue()[this.getThumbIndex(thumb)];
+        this.fireEvent('dragstart', this, thumb, this.dragStartValue, e);
+    },
+
+    onThumbDrag: function(thumb, e, offsetX) {
+        var index = this.getThumbIndex(thumb),
+            offsetValueRatio = this.offsetValueRatio,
+            constrainedValue = this.constrainValue(this.getMinValue() + offsetX / offsetValueRatio);
+
+        e.stopPropagation();
+
+        this.setIndexValue(index, constrainedValue);
+
+        this.fireEvent('drag', this, thumb, this.getValue(), e);
+
+        return false;
+    },
+
+    setIndexValue: function(index, value, animation) {
+        var thumb = this.getThumb(index),
+            values = this.getValue(),
+            minValue = this.getMinValue(),
+            offsetValueRatio = this.offsetValueRatio,
+            increment = this.getIncrement(),
+            draggable = thumb.getDraggable();
+
+        draggable.setOffset((value - minValue) * offsetValueRatio, null, animation);
+
+        values[index] = minValue + Math.round((draggable.offset.x / offsetValueRatio) / increment) * increment;
+    },
+
+    onThumbDragEnd: function(thumb, e) {
+        this.refreshThumbConstraints(thumb);
+        var index = this.getThumbIndex(thumb),
+            newValue = this.getValue()[index],
+            oldValue = this.dragStartValue;
+
+        this.fireEvent('dragend', this, thumb, this.getValue(), e);
+        if (oldValue !== newValue) {
+            this.fireEvent('change', this, thumb, newValue, oldValue);
+        }
+    },
+
+    getThumbIndex: function(thumb) {
+        return this.getThumbs().indexOf(thumb);
+    },
+
+    refreshThumbConstraints: function(thumb) {
+        var allowThumbsOverlapping = this.getAllowThumbsOverlapping(),
+            offsetX = thumb.getDraggable().getOffset().x,
+            thumbs = this.getThumbs(),
+            index = this.getThumbIndex(thumb),
+            previousThumb = thumbs[index - 1],
+            nextThumb = thumbs[index + 1],
+            thumbWidth = this.thumbWidth;
+
+        if (previousThumb) {
+            previousThumb.getDraggable().addExtraConstraint({
+                max: {
+                    x: offsetX - ((allowThumbsOverlapping) ? 0 : thumbWidth)
+                }
+            });
+        }
+
+        if (nextThumb) {
+            nextThumb.getDraggable().addExtraConstraint({
+                min: {
+                    x: offsetX + ((allowThumbsOverlapping) ? 0 : thumbWidth)
+                }
+            });
+        }
+    },
+
+    // @private
+    onTap: function(e) {
+        if (this.isDisabled()) {
+            return;
+        }
+
+        var targetElement = Ext.get(e.target);
+
+        if (!targetElement || (Ext.browser.engineName == 'WebKit' && targetElement.hasCls('x-thumb'))) {
+            return;
+        }
+
+        var touchPointX = e.touch.point.x,
+            element = this.element,
+            elementX = element.getX(),
+            offset = touchPointX - elementX - (this.thumbWidth / 2),
+            value = this.constrainValue(this.getMinValue() + offset / this.offsetValueRatio),
+            values = this.getValue(),
+            minDistance = Infinity,
+            ln = values.length,
+            i, absDistance, testValue, closestIndex, oldValue, thumb;
+
+        if (ln === 1) {
+            closestIndex = 0;
+        }
+        else {
+            for (i = 0; i < ln; i++) {
+                testValue = values[i];
+                absDistance = Math.abs(testValue - value);
+
+                if (absDistance < minDistance) {
+                    minDistance = absDistance;
+                    closestIndex = i;
+                }
+            }
+        }
+
+        oldValue = values[closestIndex];
+        thumb = this.getThumb(closestIndex);
+
+        this.setIndexValue(closestIndex, value, this.getAnimation());
+        this.refreshThumbConstraints(thumb);
+
+        if (oldValue !== value) {
+            this.fireEvent('change', this, thumb, value, oldValue);
+        }
+    },
+
+    // @private
+    updateThumbs: function(newThumbs) {
+        this.add(newThumbs);
+    },
+
+    applyValue: function(value) {
+        var values = Ext.Array.from(value || 0),
+            filteredValues = [],
+            previousFilteredValue = this.getMinValue(),
+            filteredValue, i, ln;
+
+        for (i = 0,ln = values.length; i < ln; i++) {
+            filteredValue = this.constrainValue(values[i]);
+
+            if (filteredValue < previousFilteredValue) {
+                Ext.Logger.warn("Invalid values of '"+Ext.encode(values)+"', values at smaller indexes must " +
+                    "be smaller than or equal to values at greater indexes");
+                filteredValue = previousFilteredValue;
+            }
+
+            filteredValues.push(filteredValue);
+
+            previousFilteredValue = filteredValue;
+        }
+
+        return filteredValues;
+    },
+
+    /**
+     * Updates the sliders thumbs with their new value(s)
+     */
+    updateValue: function(newValue, oldValue) {
+        var thumbs = this.getThumbs(),
+            ln = newValue.length,
+            minValue = this.getMinValue(),
+            offset = this.offsetValueRatio,
+            i;
+
+        this.setThumbsCount(ln);
+
+        for (i = 0; i < ln; i++) {
+            thumbs[i].getDraggable().setExtraConstraint(null).setOffset((newValue[i] - minValue) * offset);
+        }
+
+        for (i = 0; i < ln; i++) {
+            this.refreshThumbConstraints(thumbs[i]);
+        }
+    },
+
+    /**
+     * @private
+     */
+    refreshValue: function() {
+        this.refreshOffsetValueRatio();
+
+        this.setValue(this.getValue());
+    },
+
+    /**
+     * @private
+     * Takes a desired value of a thumb and returns the nearest snap value. e.g if minValue = 0, maxValue = 100, increment = 10 and we
+     * pass a value of 67 here, the returned value will be 70. The returned number is constrained within {@link #minValue} and {@link #maxValue},
+     * so in the above example 68 would be returned if {@link #maxValue} was set to 68.
+     * @param {Number} value The value to snap
+     * @return {Number} The snapped value
+     */
+    constrainValue: function(value) {
+        var me = this,
+            minValue  = me.getMinValue(),
+            maxValue  = me.getMaxValue(),
+            increment = me.getIncrement(),
+            remainder;
+
+        value = parseFloat(value);
+
+        if (isNaN(value)) {
+            value = minValue;
+        }
+
+        remainder = (value - minValue) % increment;
+        value -= remainder;
+
+        if (Math.abs(remainder) >= (increment / 2)) {
+            value += (remainder > 0) ? increment : -increment;
+        }
+
+        value = Math.max(minValue, value);
+        value = Math.min(maxValue, value);
+
+        return value;
+    },
+
+    setThumbsCount: function(count) {
+        var thumbs = this.getThumbs(),
+            thumbsCount = thumbs.length,
+            i, ln, thumb;
+
+        if (thumbsCount > count) {
+            for (i = 0,ln = thumbsCount - count; i < ln; i++) {
+                thumb = thumbs[thumbs.length - 1];
+                thumb.destroy();
+            }
+        }
+        else if (thumbsCount < count) {
+            for (i = 0,ln = count - thumbsCount; i < ln; i++) {
+                this.add(this.factoryThumb());
+            }
+        }
+
+        return this;
+    },
+
+    /**
+     * Convenience method. Calls {@link #setValue}.
+     */
+    setValues: function(value) {
+        this.setValue(value);
+    },
+
+    /**
+     * Convenience method. Calls {@link #getValue}.
+     * @return {Object}
+     */
+    getValues: function() {
+        return this.getValue();
+    },
+
+    /**
+     * Sets the {@link #increment} configuration.
+     * @param {Number} increment
+     * @return {Number}
+     */
+    applyIncrement: function(increment) {
+        if (increment === 0) {
+            increment = 1;
+        }
+
+        return Math.abs(increment);
+    },
+
+    // @private
+    updateAllowThumbsOverlapping: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+
+    // @private
+    updateMinValue: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+
+    // @private
+    updateMaxValue: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+
+    // @private
+    updateIncrement: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+
+    doSetDisabled: function(disabled) {
+        this.callParent(arguments);
+
+        var items = this.getItems().items,
+            ln = items.length,
+            i;
+
+        for (i = 0; i < ln; i++) {
+            items[i].setDisabled(disabled);
+        }
+    }
+
+}, function() {
+});
+
+/**
+ * @private
  */
 Ext.define('Ext.fx.runner.Css', {
     extend:  Ext.Evented ,
@@ -70229,10 +70859,10 @@ Ext.define('Ext.viewport.Viewport', {
  * you should **not** use {@link Ext#onReady}.
  */
 
-Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.xtype=i[t].panel,n.iconCls="void",n.title=i[t].title,r.push(n);this.add(r)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
+Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.xtype=i[t].panel,n.iconCls="void",n.title=i[t].title,r.push(n);this.add(r)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,t===0&&(n.margin="90 0 0.7em 0"),r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
 //# sourceMappingURL=ChildPanel.min.js.map
 
-Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",                                                                   config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Project Summary"},{panel:"team",title:"Project Team"},{panel:"risks",title:"Project Risks"}]},{xtype:"childpanel",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"View Requisitions"},{panel:"viewapprovals",title:"View Approvals"}]},{xtype:"childpanel",iconCls:"favorites",title:"misc",p:[{panel:"camera",title:"The Camera"},{panel:"buttons",title:"The Buttons"}],id:"miscID"}]}});
+Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",id:"main",                                                                   config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Project Summary"},{panel:"team",title:"Project Team"},{panel:"riskmatrix",title:"Project Risks Matrix"},{panel:"risksgrid",title:"Project Risks Grid"},{panel:"risksdataview",title:"Project Risks Dataview"}]},{xtype:"childpanel",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"View Requisitions"},{panel:"viewapprovals",title:"View Approvals"}]},{xtype:"childpanel",iconCls:"favorites",title:"misc",p:[{panel:"camera",title:"The Camera"},{panel:"buttons",title:"The Buttons"}],id:"miscID"}]}});
 //# sourceMappingURL=Main.min.js.map
 
 Ext.define('V2POC.view.Tomatos', {
@@ -70313,16 +70943,496 @@ Ext.define('V2POC.view.Tomatos', {
     }
 });
 
-Ext.define("V2POC.view.base.MenuButton",{extend: Ext.Button ,xtype:"menubutton",config:{text:null,targetPanel:null,panel:null,listeners:{tap:function(){var n=this.getTargetPanel();n.setActiveItem(this.getPanel());Ext.Viewport.hideAllMenus()}}}});
+Ext.define("V2POC.view.base.MenuButton",{extend: Ext.Button ,xtype:"menubutton",config:{text:null,targetPanel:null,panel:null,listeners:{tap:function(){Ext.Viewport.hideAllMenus();var n=this.getTargetPanel();n.setActiveItem(this.getPanel())}}}});
 //# sourceMappingURL=MenuButton.min.js.map
 
-Ext.define("V2POC.view.project.Risks",{extend: Ext.Container ,id:"theRiskMatrix",                                                    xtype:"risks",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"dataview",id:"theRiskData",width:216,height:300,listeners:{scope:this,itemclick:function(n,t){var i=this.down("grid").store;i.clearFilter();i.filter("riskSeverity",t.data.severity);i.filter("riskOccurrence",t.data.occurrence)}},singleSelect:!0,overItemCls:"x-view-over",itemSelector:".clickable",emptyText:"No data available",deferInitialRefresh:!1,data:[{severity:1,occurrence:1,count:9},{severity:1,occurrence:2,count:1},{severity:1,occurrence:3,count:0},{severity:1,occurrence:4,count:0},{severity:1,occurrence:5,count:0},{severity:2,occurrence:1,count:3},{severity:2,occurrence:2,count:4},{severity:2,occurrence:3,count:6},{severity:2,occurrence:4,count:4},{severity:2,occurrence:5,count:0},{severity:3,occurrence:1,count:15},{severity:3,occurrence:2,count:13},{severity:3,occurrence:3,count:28},{severity:3,occurrence:4,count:3},{severity:3,occurrence:5,count:0},{severity:4,occurrence:1,count:7},{severity:4,occurrence:2,count:8},{severity:4,occurrence:3,count:3},{severity:4,occurrence:4,count:2},{severity:4,occurrence:5,count:0},{severity:5,occurrence:1,count:7},{severity:5,occurrence:2,count:2},{severity:5,occurrence:3,count:2},{severity:5,occurrence:4,count:0},{severity:5,occurrence:5,count:2}],tpl:new Ext.XTemplate('<div class="matrix">','<tpl for=".">',"<div>{severity} is {occurrence} years old<\/div>","<\/tpl>",'<div class="filter">',"<span>Filters<\/span>","<ul>",'<li class="insignificant" data-e-value="insignificant">&nbsp;<\/li>','<li class="low" data-e-value="low">&nbsp;<\/li>','<li class="medium" data-e-value="medium">&nbsp;<\/li>','<li class="high" data-e-value="high">&nbsp;<\/li>','<li class="extreme" data-e-value="extreme">&nbsp;<\/li>',"<\/ul>","<\/div>","<\/div>",{disableFormats:!0,doVal:function(n,t,i){var u=Ext.getCmp("theRiskMatrix"),r="";return t===1&&(r=r+'<ul class="row">'),r=i===0?r+'<li data-e-value="'+u.theColors[n-1][t-1]+'" class="clickable '+u.theColors[n-1][t-1]+'">&nbsp;&nbsp;<\/li>':r+'<li data-e-value="'+u.theColors[n-1][t-1]+'" class="clickable '+u.theColors[n-1][t-1]+'">&nbsp;'+i+"&nbsp;<\/li>",t===5&&(r=r+"<\/ul>"),r}})}]}]},theColors:[["insignificant","low","low","low","medium"],["low","low","medium","medium","high"],["low","medium","medium","high","high"],["low","medium","high","high","extreme"],["medium","high","high","extreme","extreme"]],clickableColors:["insignificant","low","medium","high","extreme"],currColor:"high",currentSelection:{insignificant:!1,low:!1,medium:!1,high:!0,extreme:!0},getData:function(){var t=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown";$.ajax(com.ajaxObject(n,{type:1,projectId:97370})).done(function(n){var t=Ext.create("Ext.data.Store",{fields:["count","occurrence","severity"],data:n.Matrix});Ext.getCmp("theRiskData").setStore(t)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});$(function(){$("body").on("click",".matrix .filter li",function(){var t=$(this).attr("data-e-value"),n=Ext.getCmp("dashboardPortletRiskMatrix");n.currentSelection[t]=!n.currentSelection[t];n.updateFilter(n)});$("body").on("click",".matrix ul.row li",function(){var t=$(this).attr("data-e-value");n();$(this).addClass("the-selected-"+t)});$("body").on("mouseover",".matrix .filter li",function(){var n=$(this).attr("data-e-value");$(".matrix ul.row li."+n).addClass("the-hover-"+n)}).on("mouseout",".matrix .filter li",function(){var n=$(this).attr("data-e-value");$(".matrix ul.row li."+n).removeClass("the-hover-"+n)});var n=function(){rm=Ext.getCmp("dashboardPortletRiskMatrix");for(var n in rm.currentSelection)rm.currentSelection[n]=!1;$(".matrix li").removeClass(function(n,t){var r=t.split(" "),i=[];return $.each(r,function(n,t){/the-selected.*/.test(t)&&i.push(t)}),i.join(" ")})}});
-//# sourceMappingURL=Risks.min.js.map
+Ext.define('V2POC.view.project.RiskMatrix', {
+    extend:  Ext.Panel ,
+    id: 'dashboardPortletRiskMatrix',
+    xtype: 'riskmatrix',
+               
+                                
+                        
+      
+
+    theColors: [
+        ['insignificant', 'low', 'low', 'low', 'medium'],
+        ['low', 'low', 'medium', 'medium', 'high'],
+        ['low', 'medium', 'medium', 'high', 'high'],
+        ['low', 'medium', 'high', 'high', 'extreme'],
+        ['medium', 'high', 'high', 'extreme', 'extreme']
+    ],
+
+    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
+    currColor: 'high', //'extreme',
+    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
+
+    updateFilter: function (rm) {
+        var store = Ext.getCmp('theRisksDataview2').getStore();
+
+        store.clearFilter();
+        store.filterBy(function (r) {
+            if (r.raw.riskSeverity === null) {
+                return false;
+            }
+            if (r.raw.riskOccurrence === null) {
+                return false;
+            }
+
+            var theRow = r.raw.riskSeverity - 1,
+                theColumn = r.raw.riskOccurrence - 1;
+
+            for (var item in rm.currentSelection) {
+                if (rm.currentSelection[item]) {
+                    if (rm.theColors[r.raw.riskOccurrence - 1][r.raw.riskSeverity - 1] == item) {
+                        return true;
+                    }
+                }
+            }
+
+
+            return false;
+        });
+
+        for (var item in rm.currentSelection) {
+            if (rm.currentSelection[item]) {
+                $('.matrix ul.row li.' + item).addClass('the-selected-' + item);
+                $('.matrix .filter li.' + item).addClass('the-selected-' + item);
+            } else {
+                $('.matrix ul.row li.' + item).removeClass('the-selected-' + item);
+                $('.matrix .filter li.' + item).removeClass('the-selected-' + item);
+            }
+        }
+    },
+
+
+    //constructor: function (config) {
+    //    this.initConfig(config);
+    //},
+
+    initialize: function () {
+        //Ext.Viewport.on('orientationchange', 'handleOrientationChange', this);
+        this.create();
+    },
+
+    create: function () {
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
+    },
+
+    config: {
+        title: 'Risk Matrix',
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+
+            { 
+                xtype: 'container', 
+                layout: 'hbox',
+                flex: 1,
+                items: [
+                    {
+                        xtype: 'container',
+                        dock: 'top',
+                        listeners: {
+                            swipe: {
+                                fn: function (event, node, options, eOpts) {
+                                    //Ext.Msg.alert('swipe direction', event.direction);
+                                    if (event.direction === 'up') {
+                                        Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(25);
+                                        //Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setMargin('-200 5 5 5');
+                                        document.getElementById('theMatrix').style.display = 'none'
+                                        //document.getElementById('theRiskMatrix').setHeight(100);
+                                        //Ext.getCmp('theFilter').setMargin('800 0 0 0');
+                                        //this.redraw();
+                                    }
+
+                                    //Ext.Msg.alert('swipe direction', event.direction);
+                                    if (event.direction === 'left') {
+                                        Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(0);
+                                        //Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setMargin('-200 5 5 5');
+                                        document.getElementById('theFilter').style.display = 'none'
+                                        document.getElementById('theOverall').style.display = 'none'
+                                        //Ext.getCmp('theFilter').setMargin('800 0 0 0');
+                                        //this.redraw();
+                                    }
+
+
+                                    if (event.direction === 'down') {
+                                        //Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(250);
+                                        //Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setMargin('5 5 5 5');
+                                        Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(250);
+                                        document.getElementById('theOverall').style.display = 'block'
+                                        document.getElementById('theMatrix').style.display = 'block'
+                                        document.getElementById('theFilter').style.display = 'block'
+                                    }
+                                },
+                                element: 'element'
+                            }
+                        },
+
+
+
+                       // margin: '5px 5px 5px 5px',
+                        id: 'theRiskMatrix',
+                        margin: '5 5 5 5',
+                        height: 250,
+                        tpl: new Ext.XTemplate(
+                            '<div class="matrix"id="theOverall" >',
+                            '<div id="theMatrix" >',
+                            '<tpl for=".">',
+                            '{[this.doVal(values.severity, values.occurrence, values.count)]}',
+                            '</tpl>',
+                            '</div>',
+                            '<div class="filter" id="theFilter">',
+                                '<span>Filters</span>',
+                                '<ul>',
+                                    '<li class="insignificant" data-e-value="insignificant">&nbsp;</li>',
+                                    '<li class="low" data-e-value="low">&nbsp;</li>',
+                                    '<li class="medium" data-e-value="medium">&nbsp;</li>',
+                                    '<li class="high" data-e-value="high">&nbsp;</li>',
+                                    '<li class="extreme" data-e-value="extreme">&nbsp;</li>',
+                                '</ul>',
+                            '</div>',
+                            '</div>',
+                            {
+                                disableFormats: true,
+                                doVal: function (r, c, v) {
+                                    var rm = Ext.getCmp('dashboardPortletRiskMatrix');
+
+                                    var theColors = [
+                                        ['insignificant', 'low', 'low', 'low', 'medium'],
+                                        ['low', 'low', 'medium', 'medium', 'high'],
+                                        ['low', 'medium', 'medium', 'high', 'high'],
+                                        ['low', 'medium', 'high', 'high', 'extreme'],
+                                        ['medium', 'high', 'high', 'extreme', 'extreme']
+                                    ];
+                                    var s = '';
+                                    if (c === 1) {
+                                        s = s + '<ul class="row">';
+                                    }
+                                    if (v === 0) {
+                                        s = s + '<li' + ' r="' + r + '" ' + ' c="' + c + '" ' + ' v="' + v + '" ' + 'data-e-value="' + theColors[r - 1][c - 1] + '" class="clickable ' + theColors[r - 1][c - 1] + '">&nbsp;' + '' + '&nbsp;</li>';
+                                    } else {
+                                        s = s + '<li' + ' r="' + r + '" ' + ' c="' + c + '" ' + ' v="' + v + '" ' + 'data-e-value="' + theColors[r - 1][c - 1] + '" class="clickable ' + theColors[r - 1][c - 1] + '">&nbsp;' + v + '&nbsp;</li>';
+                                    }
+                                    if (c === 5) {
+                                        s = s + '</ul>';
+                                    }
+                                    return s;
+                                }
+                            }
+                        )
+                    },
+                    {
+                        xtype: 'dataview',
+                        margin: '5 5 5 5',
+                        id: 'theRisksDataview2',
+                        flex: 1,
+                        listeners: {
+                            scope: this,
+                            itemtap: function (dataview, index, target, record, e, eOpts) {
+                                alert(record.data.riskName);
+                            }
+                        },
+                        singleSelect: true,
+                            itemSelector: '.clickable',
+                        itemTpl: new Ext.XTemplate(
+                            '<hr style="margin:10px 0px 10px 0px">',
+                            '<div style="display:table;width:100%">',
+                            '<div style="display:table-cell;text-align:left;font-weight:bold">Risk #{riskSequence}</div>',
+                            '<div style="display:table-cell;text-align:right;font-weight:bold">',
+                            'S:{riskSeverity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O:{riskOccurrence}',
+                            '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="padding:5px 5px 5px 5px;width:30px;">R:</span>{[this.doVal(values.riskScore, values.riskOccurrence, values.riskSeverity )]}',
+                            '</div>',
+                            '</div>',
+                            '<div class="clickable" style="white-space:normal !important;font-size:16px;margin:5px 0px 5px 0px"> {riskName} </div>',
+                            '</div>',
+                            {
+                                disableFormats: true,
+                                doVal: function (riskScore, o, s) {
+                                    var rm = Ext.getCmp('dashboardPortletRiskMatrix');
+                                    var color = '';
+                                    var theColors = [
+                                        ['insignificant', 'low', 'low', 'low', 'medium'],
+                                        ['low', 'low', 'medium', 'medium', 'high'],
+                                        ['low', 'medium', 'medium', 'high', 'high'],
+                                        ['low', 'medium', 'high', 'high', 'extreme'],
+                                        ['medium', 'high', 'high', 'extreme', 'extreme']
+                                    ];
+                                    if (o > 0 && s > 0) {
+                                        var theColor = theColors[o - 1][s - 1];
+                                        color = theColor + '-cell';
+                                    }
+                                    var theVal = '<span class="' + color + '" style="padding:5px 5px 5px 5px;width:30px;">' + riskScore + '</span> ';
+                                    return theVal;
+                                }
+                            }
+                        )
+                    }
+
+                ]
+            }
+
+
+
+        ]
+    },
+
+
+
+
+
+
+    getData: function () {
+
+        var me = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        var theParms = { type: 1, projectId: 97370 };
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            Ext.getCmp('theRiskMatrix').setData(data.Matrix);
+
+            var storeRisks = Ext.create('Ext.data.Store', {
+                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+                data: data.Risks
+      
+            });
+            Ext.getCmp('theRisksDataview2').setStore(storeRisks);
+
+
+            //var storeMatrix = Ext.create('Ext.data.Store', {
+            //    fields: ['count', 'occurrence', 'severity'],
+            //    data: data.Matrix
+            //});
+            //Ext.getCmp('dashboardPortletRiskMatrix').setStore(storeMatrix);
+            //Ext.getCmp('theRiskData').refresh();
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
+    }
+
+});
+
+$(function () {
+
+    $('body').on('click', '.matrix .filter li', function () {
+        var type = $(this).attr('data-e-value'),
+            rm = Ext.getCmp('dashboardPortletRiskMatrix');
+        rm.currentSelection[type] = !rm.currentSelection[type];
+        rm.updateFilter(rm);
+    });
+
+    $('body').on('click', '.matrix ul.row li', function () {
+        var color = $(this).attr('data-e-value');
+        clearSelection();
+
+        $(this).addClass('the-selected-' + color);
+
+        var me = Ext.getCmp('theRisksDataview2');
+        var store = me.getStore();
+        store.clearFilter();
+        store.filter("riskSeverity", $(this).attr('r'));
+        store.filter("riskOccurrence", $(this).attr('c'));
+        //me.updateFilter(me);
+         
+    });
+
+    // filters
+    $('body').on('mouseover', '.matrix .filter li', function () {
+        var type = $(this).attr('data-e-value');
+        $('.matrix ul.row li.' + type).addClass('the-hover-' + type);
+
+    }).on('mouseout', '.matrix .filter li', function () {
+        var type = $(this).attr('data-e-value');
+        $('.matrix ul.row li.' + type).removeClass('the-hover-' + type);
+    });
+
+    var clearSelection = function () {
+        rm = Ext.getCmp('dashboardPortletRiskMatrix');
+
+        for (var item in rm.currentSelection) {
+            rm.currentSelection[item] = false;
+        }
+
+        $('.matrix li').removeClass(function (index, classNames) {
+            var currentClasses = classNames.split(" "),
+                classesToRemove = [];
+
+            $.each(currentClasses, function (index, className) {
+                if (/the-selected.*/.test(className)) {
+                    classesToRemove.push(className);
+                }
+            });
+
+            return classesToRemove.join(" ");
+        });
+
+    };
+
+});
+
+Ext.define('V2POC.view.project.RisksGrid', {
+    extend:  Ext.Container ,
+    xtype: 'risksgrid',
+               
+                                
+                        
+      
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.down('grid').getTitleBar().hide();
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
+    },
+
+    config: {
+        title: null,
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+            {
+                xtype: 'grid',
+                id: 'theRisksGrid',
+                flex: 1,
+                columns: [
+                    { text: '#', dataIndex: 'riskSequence', width: 50 },
+                    { text: 'Name', width: 600, xtype:'templatecolumn', tpl:'<div>line 2</div><div style="font-size:10px">{riskSequence} ({riskName})</div>'},
+                    { text: 'Name', width: 600, xtype: 'templatecolumn', tpl: '<div style="white-space:normal !important;font-size:11px">{riskSequence} ({riskName})</div><div>line 2</div>' },
+                    { text: 'Name', width: 600, xtype: 'templatecolumn', tpl: '<div style="font-size:12px">{riskSequence} ({riskName})</div><div>line 2</div>' },
+                    {
+                        text: 'Name', dataIndex: 'riskName', width: 600, renderer: function (value, record, rowindex) {
+                           // var r = '<div style="font-size:11px">' + record.data.riskSequence + '-' + record.data.riskName + '</div><div>line 2</div>';
+                            var r = '<h1>hi</h1>';
+                            return r;
+
+                        }
+                    },
+                    { text: 'S', dataIndex: 'riskSeverity', width: 50 },
+                    { text: 'O', dataIndex: 'riskOccurrence', width: 50 },
+                    { text: 'R', dataIndex: 'riskScore', width: 50 }
+                ]
+            }
+
+        ]
+    },
+
+    getData: function () {
+        var me1 = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        var theParms = { type: 1, projectId: 97370 };
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            var storeRisks = Ext.create('Ext.data.Store', {
+                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+                data: data.Risks
+            });
+            Ext.getCmp('theRisksGrid').setStore(storeRisks);
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
+    }
+});
+
+Ext.define('V2POC.view.project.RisksDataview', {
+    extend:  Ext.Container ,
+    xtype: 'risksdataview',
+               
+                                
+                        
+      
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
+    },
+
+    config: {
+        title: null,
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+                {
+                    xtype: 'dataview',
+                    margin: '5 5 5 5',
+                    id: 'theRisksDataview',
+                    flex: 1,
+                    listeners: {
+                        scope: this,
+                        itemtap: function (dataview, index, target, record, e, eOpts) {
+                            alert(record.data.riskName);
+                        }
+                    },
+                    singleSelect: true,
+                    itemSelector: '.clickable',
+                    itemTpl: new Ext.XTemplate(
+                        '<hr style="margin:10px 0px 10px 0px">',
+                        '<div style="display:table;width:100%">',
+                             '<div style="display:table-cell;text-align:left;font-weight:bold">Risk #{riskSequence}</div>',
+                             '<div style="display:table-cell;text-align:right;font-weight:bold">',
+                             'S:{riskSeverity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O:{riskOccurrence}',
+                                 '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="padding:5px 5px 5px 5px;width:30px;">R:</span>{[this.doVal(values.riskScore, values.riskOccurrence, values.riskSeverity )]}',
+                             '</div>',
+                             '</div>',
+                             '<div class="clickable" style="white-space:normal !important;font-size:16px;margin:5px 0px 5px 0px"> {riskName} </div>',
+                             '</div>',
+                                {
+                                    disableFormats: true,
+                                    doVal: function (riskScore, o, s) {
+                                        var rm = Ext.getCmp('dashboardPortletRiskMatrix');
+                                        var color = '';
+                                        var theColors = [
+                                            ['insignificant', 'low', 'low', 'low', 'medium'],
+                                            ['low', 'low', 'medium', 'medium', 'high'],
+                                            ['low', 'medium', 'medium', 'high', 'high'],
+                                            ['low', 'medium', 'high', 'high', 'extreme'],
+                                            ['medium', 'high', 'high', 'extreme', 'extreme']
+                                        ];
+                                        if (o > 0 && s > 0) {
+                                            var theColor = theColors[o - 1][s - 1];
+                                            color = theColor + '-cell';
+                                        }
+                                        var theVal = '<span class="' + color + '" style="padding:5px 5px 5px 5px;width:30px;">' + riskScore + '</span> ';
+                                        return theVal;
+                                    }
+                                }
+                    )
+                }
+        ]
+    },
+
+    getData: function () {
+        var me1 = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        var theParms = { type: 1, projectId: 97370 };
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            var storeRisks = Ext.create('Ext.data.Store', {
+                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+                data: data.Risks
+            });
+            Ext.getCmp('theRisksDataview').setStore(storeRisks);
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
+    }
+});
 
 Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div class="project-header">','<tpl if="level &gt; 1">','<div class="row">','<tpl if="isParentAccessible==true">','<div class="parent-project"><p><a href="/sites/{parentProjectId}/Portal.aspx"><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/a><\/p><\/div>',"<tpl else>",'<div class="parent-project"><p><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/p><\/div>',"<\/tpl>","<\/div>","<\/tpl>",'<div class="row">','<div class="project-title <tpl if="level &gt; 1">has-parent<\/tpl>"><h2><span>{projectId} &ndash; <\/span> {projectName} <span class="product-group">{productGroupCode}<\/span><\/h2><\/div>','<div class="project-last-update"><span class="label">Updated:<\/span> <span class="value">{timeSpanFromLastUpdate}<\/span> <\/div>',"<\/div>",'<div class="row">','<div class="pm-pc">','<span class="label">Project Manager:<\/span> <span class="value">{projectManager}<\/span>','<span class="spacer">&nbsp;<\/span>','<span class="label">Product Champion:<\/span> <span class="value">{productChampion}<\/span>',"<\/div>","<\/div>","<\/div>"]}]}]},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var i=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",t=this.getParams();$.ajax(com.ajaxObject(n,t)).done(function(n){Ext.getCmp("theDataSummary").setData(n)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
 //# sourceMappingURL=Summary.min.js.map
 
-Ext.create("Ext.data.Store",{storeId:"simpsonsStore",fields:["name","email","phone"],data:{items:[{name:"Lisa",email:"lisa@simpsons.com",phone:"555-111-1224"},{name:"Bart",email:"bart@simpsons.com",phone:"555-222-1234"},{name:"Homer",email:"home@simpsons.com",phone:"555-222-1244"},{name:"Marge",email:"marge@simpsons.com",phone:"555-222-1254"}]}});Ext.define("V2POC.view.project.Team",{extend: Ext.Panel ,xtype:"team",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"Project Team",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]},{xtype:"grid",title:"Simpsons",store:Ext.data.StoreManager.lookup("simpsonsStore"),columns:[{text:"Name",dataIndex:"name",width:200},{text:"Email",dataIndex:"email",width:250},{text:"Phone",dataIndex:"phone",width:120}],height:200,width:400}]}});
+Ext.define("V2POC.view.project.Team",{extend: Ext.Panel ,xtype:"team",                            initialize:function(){this.create()},create:function(){this.down("grid").getTitleBar().hide();this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"grid",flex:1,store:Ext.create("Ext.data.Store",{fields:["name","email","phone"],data:[{name:"Lisa",email:"lisa@simpsons.com",phone:"555-111-1224"},{name:"Bart",email:"bart@simpsons.com",phone:"555-222-1234"},{name:"Homer",email:"home@simpsons.com",phone:"555-222-1244"},{name:"Marge",email:"marge@simpsons.com",phone:"555-222-1254"}]}),columns:[{text:"Name",dataIndex:"name",width:200},{text:"Email",dataIndex:"email",width:250},{text:"Phone",dataIndex:"phone",width:200}]}]}});
 //# sourceMappingURL=Team.min.js.map
 
 Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Requisitions",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
@@ -70334,8 +71444,251 @@ Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"vie
 Ext.define("V2POC.view.misc.Camera",{extend: Ext.Panel ,xtype:"camera",                     initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"image",src:"http://plascehold.it/200x200",width:200,height:200},{xtype:"button",text:"Photo",handler:function(){function n(n){var t=Ext.ComponentQuery.query("image")[0];t.setSrc(n)}function t(n){alert(n)}navigator.camera.getPicture(n,t,{quality:50,destinationType:navigator.camera.DestinationType.FILE_URI,sourceType:navigator.camera.PictureSourceType.PHOTOLIBRARY})}}]}});
 //# sourceMappingURL=Camera.min.js.map
 
-Ext.define("V2POC.view.misc.Buttons",{extend: Ext.Panel ,xtype:"buttons",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{text:"New Window",xtype:"button",width:250,height:50,listeners:{tap:function(){var n=window.open("http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx","_blank","location=no")}}},{text:"Set Badge Text",xtype:"button",width:250,height:50,listeners:{tap:function(){var n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown",t=this;$.ajax(com.ajaxObject(n,{type:1,projectId:97370},!1)).fail(function(t){throw t.status+"-"+t.statusText+": "+n;}).done(function(){var t=Ext.getCmp("miscID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal)})}}}]}});
+Ext.define("V2POC.view.misc.Buttons",{extend: Ext.Panel ,xtype:"buttons",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{text:"New Window",xtype:"button",width:250,height:50,listeners:{tap:function(){var n=window.open("http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx","_blank","location=no")}}},{text:"Phone",xtype:"button",width:250,height:50,listeners:{tap:function(){document.location.href="tel:+1-847-331-2020"}}},{text:"Notfication",xtype:"button",width:250,height:50,listeners:{tap:function(){function n(){}navigator.notification.alert("You are the winner!",n,"Game Over","Done")}}},{text:"Beep",xtype:"button",width:250,height:50,listeners:{tap:function(){navigator.notification.beep(3)}}},{text:"Beep",xtype:"button",width:250,height:50,listeners:{tap:function(){navigator.notification.vibrate(2e3)}}},{text:"Set Badge Text",xtype:"button",width:250,height:50,listeners:{tap:function(){var n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown",t=this;$.ajax(com.ajaxObject(n,{type:1,projectId:97370},!1)).fail(function(t){throw t.status+"-"+t.statusText+": "+n;}).done(function(){var t=Ext.getCmp("miscID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal)})}}},{xtype:"dataview",width:216,height:300,listeners:{scope:this,itemclick:function(){}},store:{fields:["severity","occurrence","count"],data:[{severity:1,occurrence:1,count:9},{severity:1,occurrence:2,count:1},{severity:1,occurrence:3,count:0}]},itemTpl:"d<div> {severity} {occurrence} {count} <\/div>",cctpl:new Ext.XTemplate('<tpl for=".">',"<div>{severity} is {occurrence} years old<\/div>","<\/tpl>")}]}});
 //# sourceMappingURL=Buttons.min.js.map
+
+Ext.define('V2POC.view.misc.Test', {
+    extend:  Ext.Container ,
+    xtype: 'test',
+               
+                                
+                        
+      
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.items.items[0].setTitle(this.getTitle());
+        this.getData();
+    },
+
+    config: {
+        title: null,
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+                {
+                    xtype: 'dataview',
+                    margin: '5 5 5 5',
+
+                    useComponents: true,
+                    defaultType: 'testlistitem',
+
+                    id: 'theTest',
+                    flex: 1,
+                    listeners: {
+                        scope: this,
+                        itemtap: function (dataview, index, target, record, e, eOpts) {
+                            alert(record.data.riskName);
+                            //var store = this.down('grid').store;
+                            //store.clearFilter();
+                            //store.filter("riskSeverity", record.data.severity);
+                            //store.filter("riskOccurrence", record.data.occurrence);
+                        }
+                    },
+                    singleSelect: true,
+                    //overItemCls: 'x-view-over',
+                    itemSelector: '.clickable'
+                    //emptyText: 'No data available',
+                    //deferInitialRefresh: false,
+                }
+        ]
+    },
+
+    getData: function () {
+        var me1 = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        var theParms = { type: 1, projectId: 97370 };
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            var storeRisks = Ext.create('Ext.data.Store', {
+                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+                data: data.Risks
+            });
+            Ext.getCmp('theTest').setStore(storeRisks);
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
+    }
+});
+
+
+/**
+ * A simple list item to show a picture, name and cuteness value of a kitten, from the
+ * {@link Example.store.Kittens} store.
+ */
+Ext.define('V2POC.view.misc.TestListItem', {
+    extend:  Ext.dataview.component.DataItem ,
+    xtype: 'testlistitem',
+    /**
+     * we are including both Ext.Img component for the image, and the Ext.slider.Slider
+     * component for the cuteness slider.
+     */
+               
+                  
+                           
+      
+
+    config: {
+        /**
+         * A custom cls for each item
+         */
+        cls: 'kitten-list-item',
+
+        /**
+         * setup the dataMap. each property is a method in 'this' class, and then
+         * inside that config, it will call the method you pass with the value you
+         * want, form the record
+         */
+        dataMap: {
+            //this will call: this.getImage()
+            //getImage: {
+            //    //and then this will call: this.getImage().setSrc() with the
+            //    //'image' field value form the record
+            //    setSrc: 'image'
+            //},
+
+            getName: {
+                setHtml: 'riskName'
+            },
+
+            getSlider: {
+                setValue: 'riskScore'
+            }
+        },
+
+        /**
+         * @cfg {Boolean/Object/Ext.Img} image
+         * The config for the image component used in this dataitem.
+         * In this case, we just pass true, because we just want it to create
+         * a new Ext.Img.
+         */
+        //image: true,
+
+        /**
+         * @cfg {Boolean/Object/Ext.Component} name
+         * The component used to show an image. It is an Ext.Component, so we
+         * just want to add a cls so we can style it, and add some flex so it
+         * looks good.
+         */
+        name: {
+            cls: 'x-name',
+            flex: 1
+        },
+
+        /**
+         * @cfg {Boolean/Object/Ext.slider.Slider} slider
+         * The slider component to show the cuteness of the kitten. We just want to
+         * add some flex to make it look good.
+         */
+        slider: {
+            flex: 2,
+            minValue: 0,
+            maxValue: 25
+        },
+
+        /**
+         * We give it a hbox layout so the items are horizontally displayed, and then
+         * give it an align of center so they are vertically centered.
+         */
+        layout: {
+            type: 'hbox',
+            align: 'center'
+        }
+    },
+
+    /**
+     * Called when you set the {@link #image} configuration.
+     *
+     * Uses Ext.factory to return a proper instance using the configuration passed, the
+     * default component, and the existing instance (if it exists).
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setImage}.
+     */
+    //applyImage: function (config) {
+    //    return Ext.factory(config, Ext.Img, this.getImage());
+    //},
+
+    /**
+     * Called when you set the {@link #image} configuration, and is passed both the new value
+     * (from applyImage) and the old value.
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setImage}.
+     * @private
+     */
+    //updateImage: function (newImage, oldImage) {
+    //    if (newImage) {
+    //        this.add(newImage);
+    //    }
+
+    //    if (oldImage) {
+    //        this.remove(oldImage);
+    //    }
+    //},
+
+    /**
+     * Called when you set the {@link #name} configuration.
+     *
+     * Uses Ext.factory to return a proper instance using the configuration passed, the
+     * default component, and the existing instance (if it exists).
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setName}.
+     * @private
+     */
+    applyName: function (config) {
+        return Ext.factory(config, Ext.Component, this.getName());
+    },
+
+    /**
+     * Called when you set the {@link #name} configuration, and is passed both the new value
+     * (from applyName) and the old value.
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setName}.
+     * @private
+     */
+    updateName: function (newName, oldName) {
+        if (newName) {
+            this.add(newName);
+        }
+
+        if (oldName) {
+            this.remove(oldName);
+        }
+    },
+
+    /**
+     * Called when you set the {@link #slider} configuration.
+     *
+     * Uses Ext.factory to return a proper instance using the configuration passed, the
+     * default component, and the existing instance (if it exists).
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setSlider}.
+     * @private
+     */
+    applySlider: function (config) {
+        return Ext.factory(config, Ext.slider.Slider, this.getSlider());
+    },
+
+    /**
+     * Called when you set the {@link #slider} configuration, and is passed both the new value
+     * (from applySlider) and the old value.
+     *
+     * This should *never* be called manually. It will be called when you call {@link #setSlider}.
+     * @private
+     */
+    updateSlider: function (newSlider, oldSlider) {
+        if (newSlider) {
+            this.add(newSlider);
+        }
+
+        if (oldSlider) {
+            this.remove(oldSlider);
+        }
+    }
+});
 
 /*
     This file is generated and updated by Sencha Cmd. You can edit this file as
@@ -70364,7 +71717,9 @@ Ext.application({
         'base.MenuButton',
         'base.ChildPanel',
 
-        'project.Risks',
+        'project.RiskMatrix',
+        'project.RisksGrid',
+        'project.RisksDataview',
         'project.Summary',
         'project.Team',
 
@@ -70372,7 +71727,8 @@ Ext.application({
         'requisition.ViewApprovals',
 
         'misc.Camera',
-        'misc.Buttons'
+        'misc.Buttons',
+        'misc.Test'
     ],
 
     icon: {
@@ -70400,6 +71756,53 @@ Ext.application({
         // Destroy the #appLoadingIndicator element
         Ext.fly('appLoadingIndicator').destroy();
 
+        Ext.Viewport.bodyElement.on('resize', Ext.emptyFn, this, { buffer: 1 });
+
+        Ext.Viewport.on('orientationchange', function (me, orientation, width, height, eOpts) {
+
+            //function alertDismissed() {
+            //    // do something
+            //};
+
+            //navigator.notification.alert(
+            //    orientation,  // message
+            //    alertDismissed,         // callback
+            //    'orientation',            // title
+            //    'Done'                  // buttonName
+            //);
+
+            if (orientation == 'portrait') {
+                dock = 'top';
+                Ext.getCmp('main').setTabBar({ hidden: false });
+                Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setHeight(250);
+                document.getElementById('theOverall').style.display = 'block'
+                document.getElementById('theMatrix').style.display = 'block'
+                document.getElementById('theFilter').style.display = 'block'
+
+            }
+            else {
+                dock = 'left';
+                Ext.getCmp('main').setTabBar({ hidden: true });
+           }
+            //alert(this.getItems().items[1]);
+            Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setDocked(dock);
+
+        });
+
+
+        //if (Ext.os.is.Android) {
+        //        Ext.Msg.alert('orientationApp', orientation);
+        //        Ext.Viewport.setSize(window.innerWidth, window.innerHeight);
+        //    }
+        //});
+
+        //Ext.device.Orientation.on({
+        //    scope: this,
+        //    orientationchange: function (e) {
+        //        Ext.Msg.alert('Ext.device.Orientation', e.alpha + '-' + e.beta + '-' + e.gamma);
+        //    }
+        //});
+
         // Initialize the main view
         Ext.Viewport.add(Ext.create('V2POC.view.Main'));
 
@@ -70417,6 +71820,9 @@ Ext.application({
         );
     }
 });
+
+
+
 
 /*!
  * MockJax - jQuery Plugin to Mock Ajax requests
@@ -84448,9 +85854,74 @@ Ext.define('V2POC.com', {
     setMenu: function (items) {
         var menu = Ext.create("Ext.Menu", {
             defaults: { xtype: "menubutton" },
-            width: '80%',
+            //width: '80%',
+            width: '265px',
             scrollable: 'vertical',
-            items: items
+            cls: 'mainmenu',
+            layout: 'vbox',
+            //style: {
+            //    backgroundColor: 'green'
+            //},
+            items: items,
+
+
+            //items: [{ margin: "85 0 0 0", text: "Schedule", ui: "mainmenu", href: "#sessions", iconCls: "ico-schedule" }, { text: "Speakers", ui: "mainmenu", href: "#speakers", iconCls: "ico-speakers" }, { text: "Sponsors", ui: "mainmenu", href: "#sponsors", iconCls: "ico-sponsors" }, { text: "Maps", ui: "mainmenu", iconCls: "ico-maps", href: "#maps" }, { text: "Conference Activities", ui: "mainmenu", iconCls: "ico-activities", href: "#activities" }, { text: "More Info", ui: "mainmenu", iconCls: "ico-info", href: "#info" }, { xtype: "component", cls: "divider", html: "Social" }, { text: "@SamsungDevUS", ui: "mainmenu", href: "#feed", iconCls: "ico-feed" }, { text: "#sdc13", ui: "mainmenu", href: "#tweets", iconCls: "ico-twitter" }],
+
+
+
+
+            xitems: [
+                {
+                    xtype: 'dataview',
+                    flex:1,
+                    //width: 216,
+                    //height: 300,
+                    listeners: {
+                        scope: this,
+                        itemtap: function (dataview, record, item, index, e, eOpts) {
+                            alert('hi');
+                            //var store = this.down('grid').store;
+                            //store.clearFilter();
+                            //store.filter("riskSeverity", record.data.severity);
+                            //store.filter("riskOccurrence", record.data.occurrence);
+                        }
+                    },
+                    singleSelect: true,
+                    //overItemCls: 'x-view-over',
+                    itemSelector: '.clickable',
+                    //emptyText: 'No data available',
+                    //deferInitialRefresh: false,
+
+                    store: {
+                        fields: ['severity', 'occurrence', 'count'],
+                        data: [
+                            {
+                                "severity": 1,
+                                "occurrence": 1,
+                                "count": 9
+                            },
+                            {
+                                "severity": 1,
+                                "occurrence": 2,
+                                "count": 1
+                            },
+                            {
+                                "severity": 1,
+                                "occurrence": 3,
+                                "count": 0
+                            }
+                        ]
+                    },
+                    itemTpl: '<div class="clickable" style="color:#ff0000"> {severity} {occurrence} {count} </div>',
+
+                    cctpl: new Ext.XTemplate(
+                            '<tpl for=".">',
+                            '<div>{severity} is {occurrence} years old</div>',
+                            //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
+                            '</tpl>'
+                        )
+                }
+            ]
         });
         Ext.Viewport.setMenu(menu, { side: 'left', reveal: true });
     },
@@ -84458,6 +85929,7 @@ Ext.define('V2POC.com', {
     getHeader: function () {
         return  {
             xtype: "toolbar",
+            dock: 'top',
             items: [
                {
                    iconCls: "list",
