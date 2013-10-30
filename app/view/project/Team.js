@@ -37,6 +37,25 @@ Ext.define('V2POC.view.project.Team', {
                     { text: 'Phone', dataIndex: 'phone', width: 200 }
                 ]
             }
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var myContact = navigator.contacts.create({ "displayName": "Test User" });
+                myContact.note = "This contact has a note.";
+                var myVar = setInterval(function () {
+                    var b = Ext.getCmp('requisitionsID');
+                    var v = b.tab.getBadgeText();
+                    if (v === null) {
+                        v = 0;
+                    }
+                    theVal = parseInt(v);
+                    theVal = theVal + 1;
+                    b.tab.setBadgeText(theVal);
+                    navigator.notification.vibrate(2000);
+                    navigator.notification.beep(3);
+                    clearInterval(myVar);
+                }, 10000);
+            }
+        },
     }
 });

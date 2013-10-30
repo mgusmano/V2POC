@@ -49,20 +49,35 @@ Ext.define('V2POC.view.misc.Test', {
     },
 
     getData: function () {
-        var me1 = this;
-        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
-        var theParms = { type: 1, projectId: 97370 };
-        $.ajax(com.ajaxObject(theUrl, theParms))
-        .done(function (data) {
-            var storeRisks = Ext.create('Ext.data.Store', {
-                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
-                data: data.Risks
-            });
-            Ext.getCmp('theTest').setStore(storeRisks);
-        })
-        .fail(function (data) {
-            throw data.status + '-' + data.statusText + ': ' + theUrl;
+
+        var theData = [
+            { riskName: 'marc', riskScore: 25 },
+            { riskName: 'nick', riskScore: 22 },
+            { riskName: 'andy', riskScore: 20 }
+        ];
+
+        var storeRisks = Ext.create('Ext.data.Store', {
+            fields: ['riskName', 'riskScore'],
+            data: theData
         });
+        Ext.getCmp('theTest').setStore(storeRisks);
+
+
+
+        //var me1 = this;
+        //var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        //var theParms = { type: 1, projectId: 97370 };
+        //$.ajax(com.ajaxObject(theUrl, theParms))
+        //.done(function (data) {
+        //    var storeRisks = Ext.create('Ext.data.Store', {
+        //        fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+        //        data: data.Risks
+        //    });
+        //    Ext.getCmp('theTest').setStore(storeRisks);
+        //})
+        //.fail(function (data) {
+        //    throw data.status + '-' + data.statusText + ': ' + theUrl;
+        //});
     }
 });
 

@@ -1398,14 +1398,14 @@ var dataGetProject97368 = {
 }
 var dataGetProject97370 = {
     "projectId": 97370,
-    "projectName": "Supply Chain sub-project",
+    "projectName": "Supply Chain sub-project with more data to see if it wraps",
     "pddNumber": "97370",
     "level": 3,
     "isChild": true,
     "isParent": false,
     "isParentAccessible": true,
     "parentProjectId": 97368,
-    "parentProjectName": "Supply Chain parent project",
+    "parentProjectName": "Supply Chain parent project with more data to see if it wraps",
     "lastModifiedBy": "mgusmano",
     "lastUpdateDate": "/Date(1079416800000-0500)/",
     "timeSpanFromLastUpdate": "9 Years Ago",

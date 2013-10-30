@@ -130,7 +130,7 @@ Ext.define('V2POC.view.project.RiskMatrix', {
                         margin: '5 5 5 5',
                         height: 250,
                         tpl: new Ext.XTemplate(
-                            '<div class="matrix"id="theOverall" >',
+                            '<div class="matrix" id="theOverall" >',
                             '<div id="theMatrix" >',
                             '<tpl for=".">',
                             '{[this.doVal(values.severity, values.occurrence, values.count)]}',

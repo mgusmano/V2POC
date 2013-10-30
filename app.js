@@ -34,8 +34,10 @@ Ext.application({
         'requisition.ViewRequisitions',
         'requisition.ViewApprovals',
 
+        'misc.TeamTest',
         'misc.Camera',
         'misc.Buttons',
+        'misc.TextArea',
         'misc.Test'
     ],
 
@@ -113,6 +115,20 @@ Ext.application({
 
         // Initialize the main view
         Ext.Viewport.add(Ext.create('V2POC.view.Main'));
+
+        //var myVar = setInterval(function () {
+        //    var b = Ext.getCmp('requisitionsID');
+        //    var v = b.tab.getBadgeText();
+        //    if (v === null) {
+        //        v = 0;
+        //    }
+        //    theVal = parseInt(v);
+        //    theVal = theVal + 1;
+        //    b.tab.setBadgeText(theVal);
+        //    navigator.notification.vibrate(2000);
+        //    navigator.notification.beep(3);
+        //    clearInterval(myVar);
+        //}, 10000);
 
     },
 

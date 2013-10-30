@@ -767,8 +767,10 @@ Ext.ClassManager.addNameAlternateMappings({
   "V2POC.view.misc.Buttons": [],
   "V2POC.view.misc.Camera": [],
   "V2POC.view.misc.Misc": [],
+  "V2POC.view.misc.TeamTest": [],
   "V2POC.view.misc.Test": [],
   "V2POC.view.misc.TestListItem": [],
+  "V2POC.view.misc.TextArea": [],
   "V2POC.view.project.RiskMatrix": [],
   "V2POC.view.project.Risks": [],
   "V2POC.view.project.RisksDataview": [],
@@ -1761,11 +1763,17 @@ Ext.ClassManager.addNameAliasMappings({
   "V2POC.view.misc.Misc": [
     "widget.misc"
   ],
+  "V2POC.view.misc.TeamTest": [
+    "widget.teamtest"
+  ],
   "V2POC.view.misc.Test": [
     "widget.test"
   ],
   "V2POC.view.misc.TestListItem": [
     "widget.testlistitem"
+  ],
+  "V2POC.view.misc.TextArea": [
+    "widget.textarea"
   ],
   "V2POC.view.project.RiskMatrix": [
     "widget.riskmatrix"

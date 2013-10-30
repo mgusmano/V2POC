@@ -13,9 +13,18 @@ Ext.define('V2POC.view.Main', {
 
         tabBarPosition: 'bottom',
         items: [
-            { xtype: 'childpanel', iconCls: 'team', title: 'projects', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'riskmatrix', title: 'Project Risks Matrix' }, { panel: 'risksgrid', title: 'Project Risks Grid' }, { panel: 'risksdataview', title: 'Project Risks Dataview' }] },
-            { xtype: 'childpanel', iconCls: 'organize', title: 'requisitions', p: [{ panel: 'viewrequisitions', title: 'View Requisitions' }, { panel: 'viewapprovals', title: 'View Approvals' }] },
-            { xtype: 'childpanel', iconCls: 'favorites', title: 'misc', p: [{ panel: 'camera', title: 'The Camera' }, { panel: 'buttons', title: 'The Buttons' }], id: 'miscID' }
+            { xtype: 'childpanel', id: 'projectsID', iconCls: 'team', title: 'projects', p: [{ panel: 'summary', title: 'Project Summary' }, { panel: 'team', title: 'Project Team' }, { panel: 'riskmatrix', title: 'Project Risks Matrix' }, { panel: 'risksgrid', title: 'Project Risks Grid' }, { panel: 'risksdataview', title: 'Project Risks Dataview' }] },
+            { xtype: 'childpanel', id: 'requisitionsID', iconCls: 'organize', title: 'requisitions', p: [{ panel: 'viewrequisitions', title: 'View Requisitions' }, { panel: 'viewapprovals', title: 'View Approvals' }] },
+            {
+                xtype: 'childpanel', id: 'miscID', iconCls: 'favorites', title: 'misc',
+                p: [
+                    { panel: 'teamtest', title: 'The TeamTest' },
+                    { panel: 'camera', title: 'The Camera' },
+                    { panel: 'buttons', title: 'The Buttons' },
+                    { panel: 'textarea', title: 'The TextArea' },
+                    { panel: 'test', title: 'The Test' }
+                ]
+            }
 
             //{ xtype: 'tomatos' },
 
