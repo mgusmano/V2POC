@@ -7,7 +7,6 @@ Ext.define('V2POC.view.misc.Buttons', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -18,7 +17,7 @@ Ext.define('V2POC.view.misc.Buttons', {
         items: [
             com.getHeader(),
             {
-                text: 'New Window', xtype: "button", width: 250, height: 50,
+                text: 'New Window', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         var ref = window.open('http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx', '_blank', 'location=no');
@@ -26,7 +25,7 @@ Ext.define('V2POC.view.misc.Buttons', {
                 }
             },
             {
-                text: 'Phone', xtype: "button", width: 250, height: 50,
+                text: 'Phone', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         document.location.href = 'tel:847-331-2020';
@@ -35,7 +34,7 @@ Ext.define('V2POC.view.misc.Buttons', {
             },
 
             {
-                text: 'SMS', xtype: "button", width: 250, height: 50,
+                text: 'SMS', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         document.location.href = 'SMS:847-331-2020,847-571-0781?body=hello%0D%0Athere';
@@ -48,7 +47,7 @@ Ext.define('V2POC.view.misc.Buttons', {
 
 
             {
-                text: 'Mail', xtype: "button", width: 250, height: 50,
+                text: 'Mail', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         document.location.href = 'mailto:mgusmano@yahoo.com?subject=the subject&body=hello%0D%0Athere';
@@ -61,7 +60,7 @@ Ext.define('V2POC.view.misc.Buttons', {
 
 
             {
-                text: 'Contact Find', xtype: "button", width: 250, height: 50,
+                text: 'Contact Find', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
 
@@ -119,7 +118,7 @@ Ext.define('V2POC.view.misc.Buttons', {
             },
 
             {
-                text: 'Notfication', xtype: "button", width: 250, height: 50,
+                text: 'Notfication', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         function alertDismissed() {
@@ -162,7 +161,7 @@ Ext.define('V2POC.view.misc.Buttons', {
             },
 
             {
-                text: 'Beep', xtype: "button", width: 250, height: 50,
+                text: 'Beep', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         navigator.notification.beep(3);
@@ -170,7 +169,7 @@ Ext.define('V2POC.view.misc.Buttons', {
                 }
             },
             {
-                text: 'Vibrate', xtype: "button", width: 250, height: 50,
+                text: 'Vibrate', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         navigator.notification.vibrate(2000);
@@ -178,7 +177,7 @@ Ext.define('V2POC.view.misc.Buttons', {
                 }
             },
             {
-                text: 'Set Badge Text', xtype: "button", width: 250, height: 50,
+                text: 'Set Badge Text', xtype: "button", width: 250, height: 25,
                 listeners: {
                     tap: function () {
                         var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
@@ -198,59 +197,17 @@ Ext.define('V2POC.view.misc.Buttons', {
                         });
                     }
                 }
-            },
-
-                {
-                    xtype: 'dataview',
-                    width: 216,
-                    height: 300,
-                    listeners: {
-                        scope: this,
-                        itemclick: function (dataview, record, item, index, e, eOpts) {
-                            //var store = this.down('grid').store;
-                            //store.clearFilter();
-                            //store.filter("riskSeverity", record.data.severity);
-                            //store.filter("riskOccurrence", record.data.occurrence);
-                        }
-                    },
-                    //singleSelect: true,
-                    //overItemCls: 'x-view-over',
-                    //itemSelector: '.clickable',
-                    //emptyText: 'No data available',
-                    //deferInitialRefresh: false,
-
-                    store: {
-                        fields: ['severity', 'occurrence', 'count'],
-                        data: [
-                            {
-                                "severity": 1,
-                                "occurrence": 1,
-                                "count": 9
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 2,
-                                "count": 1
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 3,
-                                "count": 0
-                            }
-                        ]
-                    },
-                    itemTpl: 'd<div> {severity} {occurrence} {count} </div>',
-
-                    cctpl: new Ext.XTemplate(
-                            '<tpl for=".">',
-                            '<div>{severity} is {occurrence} years old</div>',
-                            //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
-                            '</tpl>'
-                        )
+            }
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
                 }
-
-
-
-        ]
+                catch (exception) {
+                }
+            }
+        }
     }
 });

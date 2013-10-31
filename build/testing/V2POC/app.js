@@ -36184,354 +36184,6 @@ Ext.define('Ext.Ajax', {
 });
 
 /**
- * Provides a base class for audio/visual controls. Should not be used directly.
- *
- * Please see the {@link Ext.Audio} and {@link Ext.Video} classes for more information.
- * @private
- */
-Ext.define('Ext.Media', {
-    extend:  Ext.Component ,
-    xtype: 'media',
-
-    /**
-     * @event play
-     * Fires whenever the media is played.
-     * @param {Ext.Media} this
-     */
-
-    /**
-     * @event pause
-     * Fires whenever the media is paused.
-     * @param {Ext.Media} this
-     * @param {Number} time The time at which the media was paused at in seconds.
-     */
-
-    /**
-     * @event ended
-     * Fires whenever the media playback has ended.
-     * @param {Ext.Media} this
-     * @param {Number} time The time at which the media ended at in seconds.
-     */
-
-    /**
-     * @event stop
-     * Fires whenever the media is stopped.
-     * The `pause` event will also fire after the `stop` event if the media is currently playing.
-     * The `timeupdate` event will also fire after the `stop` event regardless of playing status.
-     * @param {Ext.Media} this
-     */
-
-    /**
-     * @event volumechange
-     * Fires whenever the volume is changed.
-     * @param {Ext.Media} this
-     * @param {Number} volume The volume level from 0 to 1.
-     */
-
-    /**
-     * @event mutedchange
-     * Fires whenever the muted status is changed.
-     * The volumechange event will also fire after the `mutedchange` event fires.
-     * @param {Ext.Media} this
-     * @param {Boolean} muted The muted status.
-     */
-
-    /**
-     * @event timeupdate
-     * Fires when the media is playing every 15 to 250ms.
-     * @param {Ext.Media} this
-     * @param {Number} time The current time in seconds.
-     */
-
-    config: {
-        /**
-         * @cfg {String} url
-         * Location of the media to play.
-         * @accessor
-         */
-        url: '',
-
-        /**
-         * @cfg {Boolean} enableControls
-         * Set this to `false` to turn off the native media controls.
-         * Defaults to `false` when you are on Android, as it doesn't support controls.
-         * @accessor
-         */
-        enableControls: Ext.os.is.Android ? false : true,
-
-        /**
-         * @cfg {Boolean} autoResume
-         * Will automatically start playing the media when the container is activated.
-         * @accessor
-         */
-        autoResume: false,
-
-        /**
-         * @cfg {Boolean} autoPause
-         * Will automatically pause the media when the container is deactivated.
-         * @accessor
-         */
-        autoPause: true,
-
-        /**
-         * @cfg {Boolean} preload
-         * Will begin preloading the media immediately.
-         * @accessor
-         */
-        preload: true,
-
-        /**
-         * @cfg {Boolean} loop
-         * Will loop the media forever.
-         * @accessor
-         */
-        loop: false,
-
-        /**
-         * @cfg {Ext.Element} media
-         * A reference to the underlying audio/video element.
-         * @accessor
-         */
-        media: null,
-
-        /**
-         * @cfg {Number} volume
-         * The volume of the media from 0.0 to 1.0.
-         * @accessor
-         */
-        volume: 1,
-
-        /**
-         * @cfg {Boolean} muted
-         * Whether or not the media is muted. This will also set the volume to zero.
-         * @accessor
-         */
-        muted: false
-    },
-
-    constructor: function() {
-        this.mediaEvents = {};
-        this.callSuper(arguments);
-    },
-
-    initialize: function() {
-        var me = this;
-        me.callParent();
-
-        me.on({
-            scope: me,
-
-            activate  : me.onActivate,
-            deactivate: me.onDeactivate
-        });
-
-        me.addMediaListener({
-            canplay: 'onCanPlay',
-            play: 'onPlay',
-            pause: 'onPause',
-            ended: 'onEnd',
-            volumechange: 'onVolumeChange',
-            timeupdate: 'onTimeUpdate'
-        });
-    },
-
-    addMediaListener: function(event, fn) {
-        var me = this,
-            dom = me.media.dom,
-            bind = Ext.Function.bind;
-
-        Ext.Object.each(event, function(e, fn) {
-            fn = bind(me[fn], me);
-            me.mediaEvents[e] = fn;
-            dom.addEventListener(e, fn);
-        });
-    },
-
-    onPlay: function() {
-        this.fireEvent('play', this);
-    },
-
-    onCanPlay: function() {
-        this.fireEvent('canplay', this);
-    },
-
-    onPause: function() {
-        this.fireEvent('pause', this, this.getCurrentTime());
-    },
-
-    onEnd: function() {
-        this.fireEvent('ended', this, this.getCurrentTime());
-    },
-
-    onVolumeChange: function() {
-        this.fireEvent('volumechange', this, this.media.dom.volume);
-    },
-
-    onTimeUpdate: function() {
-        this.fireEvent('timeupdate', this, this.getCurrentTime());
-    },
-
-    /**
-     * Returns if the media is currently playing.
-     * @return {Boolean} playing `true` if the media is playing.
-     */
-    isPlaying: function() {
-        return !Boolean(this.media.dom.paused);
-    },
-
-    // @private
-    onActivate: function() {
-        var me = this;
-
-        if (me.getAutoResume() && !me.isPlaying()) {
-            me.play();
-        }
-    },
-
-    // @private
-    onDeactivate: function() {
-        var me = this;
-
-        if (me.getAutoPause() && me.isPlaying()) {
-            me.pause();
-        }
-    },
-
-    /**
-     * Sets the URL of the media element. If the media element already exists, it is update the src attribute of the
-     * element. If it is currently playing, it will start the new video.
-     */
-    updateUrl: function(newUrl) {
-        var dom = this.media.dom;
-
-        //when changing the src, we must call load:
-        //http://developer.apple.com/library/safari/#documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/ControllingMediaWithJavaScript/ControllingMediaWithJavaScript.html
-
-        dom.src = newUrl;
-
-        if ('load' in dom) {
-            dom.load();
-        }
-
-        if (this.isPlaying()) {
-            this.play();
-        }
-    },
-
-    /**
-     * Updates the controls of the video element.
-     */
-    updateEnableControls: function(enableControls) {
-        this.media.dom.controls = enableControls ? 'controls' : false;
-    },
-
-    /**
-     * Updates the loop setting of the media element.
-     */
-    updateLoop: function(loop) {
-        this.media.dom.loop = loop ? 'loop' : false;
-    },
-
-    /**
-     * Starts or resumes media playback.
-     */
-    play: function() {
-        var dom = this.media.dom;
-
-        if ('play' in dom) {
-            dom.play();
-            setTimeout(function() {
-                dom.play();
-            }, 10);
-        }
-    },
-
-    /**
-     * Pauses media playback.
-     */
-    pause: function() {
-        var dom = this.media.dom;
-
-        if ('pause' in dom) {
-            dom.pause();
-        }
-    },
-
-    /**
-     * Toggles the media playback state.
-     */
-    toggle: function() {
-        if (this.isPlaying()) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-
-    /**
-     * Stops media playback and returns to the beginning.
-     */
-    stop: function() {
-        var me = this;
-
-        me.setCurrentTime(0);
-        me.fireEvent('stop', me);
-        me.pause();
-    },
-
-    //@private
-    updateVolume: function(volume) {
-        this.media.dom.volume = volume;
-    },
-
-    //@private
-    updateMuted: function(muted) {
-        this.fireEvent('mutedchange', this, muted);
-
-        this.media.dom.muted = muted;
-    },
-
-    /**
-     * Returns the current time of the media, in seconds.
-     * @return {Number}
-     */
-    getCurrentTime: function() {
-        return this.media.dom.currentTime;
-    },
-
-    /*
-     * Set the current time of the media.
-     * @param {Number} time The time, in seconds.
-     * @return {Number}
-     */
-    setCurrentTime: function(time) {
-        this.media.dom.currentTime = time;
-
-        return time;
-    },
-
-    /**
-     * Returns the duration of the media, in seconds.
-     * @return {Number}
-     */
-    getDuration: function() {
-        return this.media.dom.duration;
-    },
-
-    destroy: function() {
-        var me = this,
-            dom  = me.media.dom,
-            mediaEvents = me.mediaEvents;
-
-        Ext.Object.each(mediaEvents, function(event, fn) {
-            dom.removeEventListener(event, fn);
-        });
-
-        this.callSuper();
-    }
-});
-
-/**
  * @class Ext.ComponentQuery
  * @extends Object
  * @singleton
@@ -37465,6 +37117,29 @@ Ext.define('Ext.Img', {
         delete this.imageElement;
 
         this.callParent();
+    }
+});
+
+/**
+ * A simple label component which allows you to insert content using {@link #html} configuration.
+ *
+ *     @example miniphone
+ *     Ext.Viewport.add({
+ *         xtype: 'label',
+ *         html: 'My label!'
+ *     });
+ */
+Ext.define('Ext.Label', {
+    extend:  Ext.Component ,
+    xtype: 'label',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'label'
+
+        /**
+         * @cfg {String} html
+         * The label of this component.
+         */
     }
 });
 
@@ -41100,202 +40775,6 @@ Ext.define('Ext.TitleBar', {
 
         if (this.isPainted()) {
             this.refreshTitlePosition();
-        }
-    }
-});
-
-/**
- * @aside example video
- * Provides a simple Container for HTML5 Video.
- *
- * ## Notes
- *
- * - There are quite a few issues with the `<video>` tag on Android devices. On Android 2+, the video will
- * appear and play on first attempt, but any attempt afterwards will not work.
- *
- * ## Useful Properties
- *
- * - {@link #url}
- * - {@link #autoPause}
- * - {@link #autoResume}
- *
- * ## Useful Methods
- *
- * - {@link #method-pause}
- * - {@link #method-play}
- * - {@link #toggle}
- *
- * ## Example
- *
- *     var panel = Ext.create('Ext.Panel', {
- *         fullscreen: true,
- *         items: [
- *             {
- *                 xtype    : 'video',
- *                 x        : 600,
- *                 y        : 300,
- *                 width    : 175,
- *                 height   : 98,
- *                 url      : "porsche911.mov",
- *                 posterUrl: 'porsche.png'
- *             }
- *         ]
- *     });
- */
-Ext.define('Ext.Video', {
-    extend:  Ext.Media ,
-    xtype: 'video',
-
-    config: {
-        /**
-         * @cfg {String/Array} url
-         * Location of the video to play. This should be in H.264 format and in a .mov file format.
-         * @accessor
-         */
-
-        /**
-         * @cfg {String} posterUrl
-         * Location of a poster image to be shown before showing the video.
-         * @accessor
-         */
-        posterUrl: null,
-
-        /**
-         * @cfg
-         * @inheritdoc
-         */
-        cls: Ext.baseCSSPrefix + 'video'
-    },
-
-    template: [{
-        /**
-         * @property {Ext.dom.Element} ghost
-         * @private
-         */
-        reference: 'ghost',
-        classList: [Ext.baseCSSPrefix + 'video-ghost']
-    }, {
-        tag: 'video',
-        reference: 'media',
-        classList: [Ext.baseCSSPrefix + 'media']
-    }],
-
-    initialize: function() {
-        var me = this;
-
-        me.callParent();
-
-        me.media.hide();
-
-        me.onBefore({
-            erased: 'onErased',
-            scope: me
-        });
-
-        me.ghost.on({
-            tap: 'onGhostTap',
-            scope: me
-        });
-
-        me.media.on({
-            pause: 'onPause',
-            scope: me
-        });
-
-        if (Ext.os.is.Android4 || Ext.os.is.iPad) {
-            this.isInlineVideo = true;
-        }
-    },
-
-    applyUrl: function(url) {
-        return [].concat(url);
-    },
-
-    updateUrl: function(newUrl) {
-        var me = this,
-            media = me.media,
-            newLn = newUrl.length,
-            existingSources = media.query('source'),
-            oldLn = existingSources.length,
-            i;
-
-
-        for (i = 0; i < oldLn; i++) {
-            Ext.fly(existingSources[i]).destroy();
-        }
-
-        for (i = 0; i < newLn; i++) {
-            media.appendChild(Ext.Element.create({
-                tag: 'source',
-                src: newUrl[i]
-            }));
-        }
-
-        if (me.isPlaying()) {
-            me.play();
-        }
-    },
-
-    onErased: function() {
-        this.pause();
-        this.media.setTop(-2000);
-        this.ghost.show();
-    },
-
-    /**
-     * @private
-     * Called when the {@link #ghost} element is tapped.
-     */
-    onGhostTap: function() {
-        var me = this,
-            media = this.media,
-            ghost = this.ghost;
-
-        media.show();
-        if (Ext.browser.is.AndroidStock2) {
-            setTimeout(function() {
-                me.play();
-                setTimeout(function() {
-                    media.hide();
-                }, 10);
-            }, 10);
-        } else {
-            // Browsers which support native video tag display only, move the media down so
-            // we can control the Viewport
-            ghost.hide();
-            me.play();
-        }
-    },
-
-    /**
-     * @private
-     * native video tag display only, move the media down so we can control the Viewport
-     */
-    onPause: function() {
-        this.callParent(arguments);
-        if (!this.isInlineVideo) {
-            this.media.setTop(-2000);
-            this.ghost.show();
-        }
-    },
-
-    /**
-     * @private
-     * native video tag display only, move the media down so we can control the Viewport
-     */
-    onPlay: function() {
-        this.callParent(arguments);
-        this.media.setTop(0);
-    },
-
-    /**
-     * Updates the URL to the poster, even if it is rendered.
-     * @param {Object} newUrl
-     */
-    updatePosterUrl: function(newUrl) {
-        var ghost = this.ghost;
-        if (ghost) {
-            ghost.setStyle('background-image', 'url(' + newUrl + ')');
         }
     }
 });
@@ -70862,7 +70341,7 @@ Ext.define('Ext.viewport.Viewport', {
 Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.xtype=i[t].panel,n.iconCls="void",n.title=i[t].title,r.push(n);this.add(r)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,t===0&&(n.margin="90 0 0.7em 0"),r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
 //# sourceMappingURL=ChildPanel.min.js.map
 
-Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",id:"main",                                                                   config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Project Summary"},{panel:"team",title:"Project Team"},{panel:"riskmatrix",title:"Project Risks Matrix"},{panel:"risksgrid",title:"Project Risks Grid"},{panel:"risksdataview",title:"Project Risks Dataview"}]},{xtype:"childpanel",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"View Requisitions"},{panel:"viewapprovals",title:"View Approvals"}]},{xtype:"childpanel",iconCls:"favorites",title:"misc",p:[{panel:"camera",title:"The Camera"},{panel:"buttons",title:"The Buttons"}],id:"miscID"}]}});
+Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",id:"main",                                        config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",id:"projectsID",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Summary"},{panel:"team",title:"Team"},{panel:"riskmatrix",title:"Risks Matrix"},{panel:"risksgrid",title:"Risks Grid"},{panel:"risksdataview",title:"All Risks"}]},{xtype:"childpanel",id:"requisitionsID",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"Requisitions"},{panel:"viewapprovals",title:"Approvals"}]},{xtype:"childpanel",id:"miscID",iconCls:"favorites",title:"misc",p:[{panel:"buttons",title:"The Buttons"},{panel:"teamtest",title:"The TeamTest"},{panel:"camera",title:"The Camera"},{panel:"textarea",title:"The TextArea"},{panel:"test",title:"The Test"}]}]}});
 //# sourceMappingURL=Main.min.js.map
 
 Ext.define('V2POC.view.Tomatos', {
@@ -71016,7 +70495,7 @@ Ext.define('V2POC.view.project.RiskMatrix', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
+        //this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -71078,7 +70557,7 @@ Ext.define('V2POC.view.project.RiskMatrix', {
                         margin: '5 5 5 5',
                         height: 250,
                         tpl: new Ext.XTemplate(
-                            '<div class="matrix"id="theOverall" >',
+                            '<div class="matrix" id="theOverall" >',
                             '<div id="theMatrix" >',
                             '<tpl for=".">',
                             '{[this.doVal(values.severity, values.occurrence, values.count)]}',
@@ -71173,19 +70652,20 @@ Ext.define('V2POC.view.project.RiskMatrix', {
 
                 ]
             }
-
-
-
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     },
 
-
-
-
-
-
     getData: function () {
-
         var me = this;
         var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
         var theParms = { type: 1, projectId: 97370 };
@@ -71199,14 +70679,6 @@ Ext.define('V2POC.view.project.RiskMatrix', {
       
             });
             Ext.getCmp('theRisksDataview2').setStore(storeRisks);
-
-
-            //var storeMatrix = Ext.create('Ext.data.Store', {
-            //    fields: ['count', 'occurrence', 'severity'],
-            //    data: data.Matrix
-            //});
-            //Ext.getCmp('dashboardPortletRiskMatrix').setStore(storeMatrix);
-            //Ext.getCmp('theRiskData').refresh();
         })
         .fail(function (data) {
             throw data.status + '-' + data.statusText + ': ' + theUrl;
@@ -71287,7 +70759,6 @@ Ext.define('V2POC.view.project.RisksGrid', {
 
     create: function () {
         this.down('grid').getTitleBar().hide();
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -71310,7 +70781,6 @@ Ext.define('V2POC.view.project.RisksGrid', {
                            // var r = '<div style="font-size:11px">' + record.data.riskSequence + '-' + record.data.riskName + '</div><div>line 2</div>';
                             var r = '<h1>hi</h1>';
                             return r;
-
                         }
                     },
                     { text: 'S', dataIndex: 'riskSeverity', width: 50 },
@@ -71318,12 +70788,21 @@ Ext.define('V2POC.view.project.RisksGrid', {
                     { text: 'R', dataIndex: 'riskScore', width: 50 }
                 ]
             }
-
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     },
 
     getData: function () {
-        var me1 = this;
+        var me = this;
         var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
         var theParms = { type: 1, projectId: 97370 };
         $.ajax(com.ajaxObject(theUrl, theParms))
@@ -71353,7 +70832,6 @@ Ext.define('V2POC.view.project.RisksDataview', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -71408,7 +70886,13 @@ Ext.define('V2POC.view.project.RisksDataview', {
                                 }
                     )
                 }
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                newActiveItem.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+                newActiveItem.down('#titleSubLabel').setHtml(newActiveItem.getTitle());
+            }
+        }
     },
 
     getData: function () {
@@ -71429,23 +70913,125 @@ Ext.define('V2POC.view.project.RisksDataview', {
     }
 });
 
-Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div class="project-header">','<tpl if="level &gt; 1">','<div class="row">','<tpl if="isParentAccessible==true">','<div class="parent-project"><p><a href="/sites/{parentProjectId}/Portal.aspx"><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/a><\/p><\/div>',"<tpl else>",'<div class="parent-project"><p><span class="pdd-id">{parentProjectId} &ndash; <\/span> {parentProjectName}<\/p><\/div>',"<\/tpl>","<\/div>","<\/tpl>",'<div class="row">','<div class="project-title <tpl if="level &gt; 1">has-parent<\/tpl>"><h2><span>{projectId} &ndash; <\/span> {projectName} <span class="product-group">{productGroupCode}<\/span><\/h2><\/div>','<div class="project-last-update"><span class="label">Updated:<\/span> <span class="value">{timeSpanFromLastUpdate}<\/span> <\/div>',"<\/div>",'<div class="row">','<div class="pm-pc">','<span class="label">Project Manager:<\/span> <span class="value">{projectManager}<\/span>','<span class="spacer">&nbsp;<\/span>','<span class="label">Product Champion:<\/span> <span class="value">{productChampion}<\/span>',"<\/div>","<\/div>","<\/div>"]}]}]},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var i=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",t=this.getParams();$.ajax(com.ajaxObject(n,t)).done(function(n){Ext.getCmp("theDataSummary").setData(n)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
+Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div style="display:table;width:100%;margin:10px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">{projectId} &ndash; {projectName}<\/span><\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:25px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Parent:<\/span> {parentProjectId} &ndash; {parentProjectName} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Project Manager:<\/span> {projectManager} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Champion:<\/span> {productChampion} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Group: <\/span> {productGroupCode} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Updated: <\/span> {timeSpanFromLastUpdate} <\/div>',"<\/div>","<\/div>"]}]}],listeners:{activate:function(n){var me=n;try{}catch(t){}}}},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var t=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",i=this.getParams();$.ajax(com.ajaxObject(n,i)).done(function(n){Ext.getCmp("theDataSummary").setData(n);com.setProjectId(n.projectId);com.setProjectName(n.projectName);com.setTitle(t)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
 //# sourceMappingURL=Summary.min.js.map
 
-Ext.define("V2POC.view.project.Team",{extend: Ext.Panel ,xtype:"team",                            initialize:function(){this.create()},create:function(){this.down("grid").getTitleBar().hide();this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"grid",flex:1,store:Ext.create("Ext.data.Store",{fields:["name","email","phone"],data:[{name:"Lisa",email:"lisa@simpsons.com",phone:"555-111-1224"},{name:"Bart",email:"bart@simpsons.com",phone:"555-222-1234"},{name:"Homer",email:"home@simpsons.com",phone:"555-222-1244"},{name:"Marge",email:"marge@simpsons.com",phone:"555-222-1254"}]}),columns:[{text:"Name",dataIndex:"name",width:200},{text:"Email",dataIndex:"email",width:250},{text:"Phone",dataIndex:"phone",width:200}]}]}});
+Ext.define("V2POC.view.project.Team",{extend: Ext.Container ,xtype:"team",                                                    initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"dataview",margin:"5 5 5 5",id:"theTeamTestDataview",flex:1,itemTpl:new Ext.XTemplate('<hr style="margin:10px 0px 10px 0px">','<div class="teamRoot" style="display:table;width:100%">','<div style="display:table-cell;text-align:left;font-weight:bold">{riskName}<\/div>','<div pn="{phoneNumber}"  style="display:table-cell;text-align:right;font-weight:bold"><span class="teamSMS" pn="{phoneNumber}">text<\/span>&nbsp;&nbsp;&nbsp;<span class="teamCall" pn="{phoneNumber}">call<\/span><\/div>',"<\/div>")}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}},getData:function(){var n=Ext.create("Ext.data.Store",{fields:["riskName","riskScore","phoneNumber"],data:[{riskName:"marc",riskScore:25,phoneNumber:"847-331-2020"},{riskName:"nick",riskScore:22,phoneNumber:"847-331-2022"},{riskName:"andy",riskScore:20,phoneNumber:"847-331-2023"}]});Ext.getCmp("theTeamTestDataview").setStore(n)}});$(function(){$("body").on("click",".teamRoot .teamSMS",function(){var n=$(this).attr("pn");document.location.href="SMS:"+n+"?body=message %0D%0A here"});$("body").on("click",".teamRoot .teamCall",function(){var n=$(this).attr("pn");document.location.href="tel:"+n})});
 //# sourceMappingURL=Team.min.js.map
 
-Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Requisitions",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
-//# sourceMappingURL=viewrequisitions.min.js.map
+Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
+//# sourceMappingURL=ViewRequisitions.min.js.map
 
-Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[{xtype:"toolbar",title:"View Approvals",items:[{iconCls:"list",ui:"plain",left:0,listeners:{tap:function(){Ext.Viewport.toggleMenu("left")}}}]},{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}]}});
-//# sourceMappingURL=viewapprovals.min.js.map
+Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
+//# sourceMappingURL=ViewApprovals.min.js.map
 
-Ext.define("V2POC.view.misc.Camera",{extend: Ext.Panel ,xtype:"camera",                     initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"image",src:"http://plascehold.it/200x200",width:200,height:200},{xtype:"button",text:"Photo",handler:function(){function n(n){var t=Ext.ComponentQuery.query("image")[0];t.setSrc(n)}function t(n){alert(n)}navigator.camera.getPicture(n,t,{quality:50,destinationType:navigator.camera.DestinationType.FILE_URI,sourceType:navigator.camera.PictureSourceType.PHOTOLIBRARY})}}]}});
+Ext.define('V2POC.view.misc.TeamTest', {
+    extend:  Ext.Panel ,
+    xtype: 'teamtest',
+    requires: [
+    ],
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.down('grid').getTitleBar().hide();
+        this.getData();
+    },
+
+    config: {
+        title: null,
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+            {
+                xtype: 'grid',
+                flex: 1,
+                store: Ext.create('Ext.data.Store', {
+                    fields: ['name', 'email', 'phone'],
+                    data: [
+                            { 'name': 'Lisa', "email": "lisa@simpsons.com", "phone": "555-111-1224" },
+                            { 'name': 'Bart', "email": "bart@simpsons.com", "phone": "555-222-1234" },
+                            { 'name': 'Homer', "email": "home@simpsons.com", "phone": "555-222-1244" },
+                            { 'name': 'Marge', "email": "marge@simpsons.com", "phone": "555-222-1254" }
+                        ]
+                }),
+                columns: [
+                    { text: 'Name', dataIndex: 'name', width: 200 },
+                    { text: 'Email', dataIndex: 'email', width: 250 },
+                    { text: 'Phone', dataIndex: 'phone', width: 200 }
+                ]
+            }
+        ],
+        listeners: {
+            scope: this,
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+
+                var me = newActiveItem;
+                com.setTitle(me);
+
+                try {
+                    var myContact = navigator.contacts.create({ "displayName": "Test User" });
+                    myContact.note = "This contact has a note.";
+
+                    var myVar = setInterval(function () {
+                        var b = Ext.getCmp('requisitionsID');
+                        var v = b.tab.getBadgeText();
+                        if (v === null) {
+                            v = 0;
+                        }
+                        theVal = parseInt(v);
+                        theVal = theVal + 1;
+                        b.tab.setBadgeText(theVal);
+                        navigator.notification.vibrate(2000);
+                        navigator.notification.beep(3);
+                        clearInterval(myVar);
+                    }, 10000);
+                }
+                catch(exception) {
+                }
+            }
+        }
+    },
+
+    getData: function () {
+    }
+});
+
+Ext.define("V2POC.view.misc.Camera",{extend: Ext.Panel ,xtype:"camera",                     initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"image",src:"http://plascehold.it/200x200",width:200,height:200},{xtype:"button",text:"Photo",handler:function(){function n(n){var t=Ext.ComponentQuery.query("image")[0];t.setSrc(n)}function t(n){alert(n)}navigator.camera.getPicture(n,t,{quality:50,destinationType:navigator.camera.DestinationType.FILE_URI,sourceType:navigator.camera.PictureSourceType.PHOTOLIBRARY})}}]}});
 //# sourceMappingURL=Camera.min.js.map
 
-Ext.define("V2POC.view.misc.Buttons",{extend: Ext.Panel ,xtype:"buttons",initialize:function(){this.create()},create:function(){this.items.items[0].setTitle(this.getTitle());this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{text:"New Window",xtype:"button",width:250,height:50,listeners:{tap:function(){var n=window.open("http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx","_blank","location=no")}}},{text:"Phone",xtype:"button",width:250,height:50,listeners:{tap:function(){document.location.href="tel:+1-847-331-2020"}}},{text:"Notfication",xtype:"button",width:250,height:50,listeners:{tap:function(){function n(){}navigator.notification.alert("You are the winner!",n,"Game Over","Done")}}},{text:"Beep",xtype:"button",width:250,height:50,listeners:{tap:function(){navigator.notification.beep(3)}}},{text:"Beep",xtype:"button",width:250,height:50,listeners:{tap:function(){navigator.notification.vibrate(2e3)}}},{text:"Set Badge Text",xtype:"button",width:250,height:50,listeners:{tap:function(){var n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown",t=this;$.ajax(com.ajaxObject(n,{type:1,projectId:97370},!1)).fail(function(t){throw t.status+"-"+t.statusText+": "+n;}).done(function(){var t=Ext.getCmp("miscID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal)})}}},{xtype:"dataview",width:216,height:300,listeners:{scope:this,itemclick:function(){}},store:{fields:["severity","occurrence","count"],data:[{severity:1,occurrence:1,count:9},{severity:1,occurrence:2,count:1},{severity:1,occurrence:3,count:0}]},itemTpl:"d<div> {severity} {occurrence} {count} <\/div>",cctpl:new Ext.XTemplate('<tpl for=".">',"<div>{severity} is {occurrence} years old<\/div>","<\/tpl>")}]}});
+Ext.define("V2POC.view.misc.Buttons",{extend: Ext.Panel ,xtype:"buttons",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{text:"New Window",xtype:"button",width:250,height:25,listeners:{tap:function(){var n=window.open("http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx","_blank","location=no")}}},{text:"Phone",xtype:"button",width:250,height:25,listeners:{tap:function(){document.location.href="tel:847-331-2020"}}},{text:"SMS",xtype:"button",width:250,height:25,listeners:{tap:function(){document.location.href="SMS:847-331-2020,847-571-0781?body=hello%0D%0Athere"}}},{text:"Mail",xtype:"button",width:250,height:25,listeners:{tap:function(){document.location.href="mailto:mgusmano@yahoo.com?subject=the subject&body=hello%0D%0Athere"}}},{text:"Contact Find",xtype:"button",width:250,height:25,listeners:{tap:function(){function i(n){for(var r,i,t=0;t<n.length;t++){console.log("Display Name = "+n[t].displayName);r=Ext.encode(n[t].phoneNumbers);navigator.notification.alert(n[t].displayName,u,r,"OK");i=Ext.encode(n[t]);console.log(i);Ext.getCmp("theTextArea").setHtml(i);document.location.href="tel:"+n[t].phoneNumbers[0].value;function u(){}}}function r(){alert("onError!")}var n,t;Ext.getCmp("theTextArea").setHtml("this is a test");n=new ContactFindOptions;n.filter="Zoya";t=["displayName","name","phoneNumbers","emails"];navigator.contacts.find(t,i,r,n)}}},{text:"Notfication",xtype:"button",width:250,height:25,listeners:{tap:function(){function n(){}navigator.notification.alert("You are the winner!",n,"Game Over","Done")}}},{text:"Scan",xtype:"button",width:250,height:20,listeners:{tap:function(){cordova.plugins.barcodeScanner.scan(function(n){alert("We got a barcode\nResult: "+n.text+"\nFormat: "+n.format+"\nCancelled: "+n.cancelled)},function(n){alert("Scanning failed: "+n)})}}},{text:"Beep",xtype:"button",width:250,height:25,listeners:{tap:function(){navigator.notification.beep(3)}}},{text:"Vibrate",xtype:"button",width:250,height:25,listeners:{tap:function(){navigator.notification.vibrate(2e3)}}},{text:"Set Badge Text",xtype:"button",width:250,height:25,listeners:{tap:function(){var n="http://"+location.hostname+":8095/ProjectService.svc/json/GetRiskBurndown",t=this;$.ajax(com.ajaxObject(n,{type:1,projectId:97370},!1)).fail(function(t){throw t.status+"-"+t.statusText+": "+n;}).done(function(){var t=Ext.getCmp("miscID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal)})}}}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
 //# sourceMappingURL=Buttons.min.js.map
+
+Ext.define('V2POC.view.misc.TextArea', {
+    extend:  Ext.Container ,
+    xtype: 'textarea',
+    requires: [
+    ],
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+    },
+
+    config: {
+        title: null,
+        layout: 'vbox',
+        items: [
+            com.getHeader(),
+                {
+                    xtype: 'textareafield',
+                    flex: 1,
+                    id: 'theTextArea',
+                    name: 'bio',
+                    margin: '5 5 5 5'
+                }
+        ]
+    }
+});
 
 Ext.define('V2POC.view.misc.Test', {
     extend:  Ext.Container ,
@@ -71460,7 +71046,6 @@ Ext.define('V2POC.view.misc.Test', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -71498,20 +71083,35 @@ Ext.define('V2POC.view.misc.Test', {
     },
 
     getData: function () {
-        var me1 = this;
-        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
-        var theParms = { type: 1, projectId: 97370 };
-        $.ajax(com.ajaxObject(theUrl, theParms))
-        .done(function (data) {
-            var storeRisks = Ext.create('Ext.data.Store', {
-                fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
-                data: data.Risks
-            });
-            Ext.getCmp('theTest').setStore(storeRisks);
-        })
-        .fail(function (data) {
-            throw data.status + '-' + data.statusText + ': ' + theUrl;
+
+        var theData = [
+            { riskName: 'marc', riskScore: 25 },
+            { riskName: 'nick', riskScore: 22 },
+            { riskName: 'andy', riskScore: 20 }
+        ];
+
+        var storeRisks = Ext.create('Ext.data.Store', {
+            fields: ['riskName', 'riskScore'],
+            data: theData
         });
+        Ext.getCmp('theTest').setStore(storeRisks);
+
+
+
+        //var me1 = this;
+        //var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
+        //var theParms = { type: 1, projectId: 97370 };
+        //$.ajax(com.ajaxObject(theUrl, theParms))
+        //.done(function (data) {
+        //    var storeRisks = Ext.create('Ext.data.Store', {
+        //        fields: ['riskSequence', 'riskName', 'riskSeverity', 'riskOccurrence', 'riskScore', 'riskExposureCategorySequence', 'riskExposureCategoryName', 'placesUsed'],
+        //        data: data.Risks
+        //    });
+        //    Ext.getCmp('theTest').setStore(storeRisks);
+        //})
+        //.fail(function (data) {
+        //    throw data.status + '-' + data.statusText + ': ' + theUrl;
+        //});
     }
 });
 
@@ -71726,8 +71326,10 @@ Ext.application({
         'requisition.ViewRequisitions',
         'requisition.ViewApprovals',
 
+        'misc.TeamTest',
         'misc.Camera',
         'misc.Buttons',
+        'misc.TextArea',
         'misc.Test'
     ],
 
@@ -71805,6 +71407,20 @@ Ext.application({
 
         // Initialize the main view
         Ext.Viewport.add(Ext.create('V2POC.view.Main'));
+
+        //var myVar = setInterval(function () {
+        //    var b = Ext.getCmp('requisitionsID');
+        //    var v = b.tab.getBadgeText();
+        //    if (v === null) {
+        //        v = 0;
+        //    }
+        //    theVal = parseInt(v);
+        //    theVal = theVal + 1;
+        //    b.tab.setBadgeText(theVal);
+        //    navigator.notification.vibrate(2000);
+        //    navigator.notification.beep(3);
+        //    clearInterval(myVar);
+        //}, 10000);
 
     },
 
@@ -73812,14 +73428,14 @@ var dataGetProject97368 = {
 }
 var dataGetProject97370 = {
     "projectId": 97370,
-    "projectName": "Supply Chain sub-project",
+    "projectName": "Supply Chain sub-project with more data to see if it wraps",
     "pddNumber": "97370",
     "level": 3,
     "isChild": true,
     "isParent": false,
     "isParentAccessible": true,
     "parentProjectId": 97368,
-    "parentProjectName": "Supply Chain parent project",
+    "parentProjectName": "Supply Chain parent project with more data to see if it wraps",
     "lastModifiedBy": "mgusmano",
     "lastUpdateDate": "/Date(1079416800000-0500)/",
     "timeSpanFromLastUpdate": "9 Years Ago",
@@ -85828,7 +85444,16 @@ Ext.define('V2POC.com', {
     singleton: true,
     alternateClassName: 'com',
 
+    requires: [
+    //    'V2POC.view.base.Header'
+    ],
+
     theTest: true,
+
+    config: {
+        projectId: null,
+        projectName: null
+    },
 
     ajaxUrl: function (theService, theMethod) {
         //return 'http://' + location.hostname + ':8095/' + 'api/' + theService + '/' + theMethod;
@@ -85854,7 +85479,6 @@ Ext.define('V2POC.com', {
     setMenu: function (items) {
         var menu = Ext.create("Ext.Menu", {
             defaults: { xtype: "menubutton" },
-            //width: '80%',
             width: '265px',
             scrollable: 'vertical',
             cls: 'mainmenu',
@@ -85862,88 +85486,101 @@ Ext.define('V2POC.com', {
             //style: {
             //    backgroundColor: 'green'
             //},
-            items: items,
-
-
-            //items: [{ margin: "85 0 0 0", text: "Schedule", ui: "mainmenu", href: "#sessions", iconCls: "ico-schedule" }, { text: "Speakers", ui: "mainmenu", href: "#speakers", iconCls: "ico-speakers" }, { text: "Sponsors", ui: "mainmenu", href: "#sponsors", iconCls: "ico-sponsors" }, { text: "Maps", ui: "mainmenu", iconCls: "ico-maps", href: "#maps" }, { text: "Conference Activities", ui: "mainmenu", iconCls: "ico-activities", href: "#activities" }, { text: "More Info", ui: "mainmenu", iconCls: "ico-info", href: "#info" }, { xtype: "component", cls: "divider", html: "Social" }, { text: "@SamsungDevUS", ui: "mainmenu", href: "#feed", iconCls: "ico-feed" }, { text: "#sdc13", ui: "mainmenu", href: "#tweets", iconCls: "ico-twitter" }],
-
-
-
-
-            xitems: [
-                {
-                    xtype: 'dataview',
-                    flex:1,
-                    //width: 216,
-                    //height: 300,
-                    listeners: {
-                        scope: this,
-                        itemtap: function (dataview, record, item, index, e, eOpts) {
-                            alert('hi');
-                            //var store = this.down('grid').store;
-                            //store.clearFilter();
-                            //store.filter("riskSeverity", record.data.severity);
-                            //store.filter("riskOccurrence", record.data.occurrence);
-                        }
-                    },
-                    singleSelect: true,
-                    //overItemCls: 'x-view-over',
-                    itemSelector: '.clickable',
-                    //emptyText: 'No data available',
-                    //deferInitialRefresh: false,
-
-                    store: {
-                        fields: ['severity', 'occurrence', 'count'],
-                        data: [
-                            {
-                                "severity": 1,
-                                "occurrence": 1,
-                                "count": 9
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 2,
-                                "count": 1
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 3,
-                                "count": 0
-                            }
-                        ]
-                    },
-                    itemTpl: '<div class="clickable" style="color:#ff0000"> {severity} {occurrence} {count} </div>',
-
-                    cctpl: new Ext.XTemplate(
-                            '<tpl for=".">',
-                            '<div>{severity} is {occurrence} years old</div>',
-                            //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
-                            '</tpl>'
-                        )
-                }
-            ]
+            items: items
         });
         Ext.Viewport.setMenu(menu, { side: 'left', reveal: true });
     },
 
     getHeader: function () {
-        return  {
-            xtype: "toolbar",
+        return {
+            xtype: "container",
+            itemId: 'headerContainer',
             dock: 'top',
+            height: 50,
+            width: '100%',
+            margin: '0 0 0 0',
+            padding: '0 0 0 0',
+            cls: 'x-header-dark x-header',
+            style: {
+                backgroundColor: 'gray',
+                color: '#ffffff'
+            },
+            layout: 'hbox',
             items: [
                {
+                   xtype: 'button',
+                   margin: '10 0 0 5',
+                   width: 32,
                    iconCls: "list",
                    ui: "plain",
-                   left: 0,
+                   style: {
+                       //backgroundColor: 'gray',
+                       background: 'transparent',
+                       color: '#ffffff',
+                       padding: '0 0 0 0'
+                   },
                    listeners: {
                        tap: function () {
                            Ext.Viewport.toggleMenu("left");
                        }
                    }
+               },
+               {
+                   xtype: 'container',
+                   flex: 1,
+                   itemId: 'titleContainer',
+                   layout: 'vbox',
+                           doTitle: function (s) {
+                               this.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+                               this.down('#titleSubLabel').setHtml(s);
+                           },
+                        items: [
+                       {
+                           xtype: 'label',
+                           itemId: 'titleLabel',
+                           styleHtmlCls: 'titleLabel',
+                           styleHtmlContent: true
+                       },
+                       {
+                           xtype: 'label',
+                           itemId: 'titleSubLabel',
+                           styleHtmlCls: 'titleSubLabel',
+                           styleHtmlContent: true
+                       }
+                   ]
                }
+               //{
+               //    xtype: 'button',
+               //    width: 45,
+               //    iconCls: "more",
+               //    ui: "plain",
+               //    style: {
+               //        backgroundColor: 'gray',
+               //        color: '#ffffff'
+               //    },
+               //    listeners: {
+               //        tap: function () {
+               //            Ext.Viewport.toggleMenu("right");
+               //        }
+               //    }
+               //}
             ]
         }
     },
+
+    setTitle: function (me) {
+        if (com.getProjectId() != null) {
+            //me.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+            //me.down('#titleSubLabel').setHtml(me.getTitle());
+            me.down('#titleLabel').setHtml(me.getTitle());
+            me.down('#titleSubLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+        }
+        else {
+            me.down('#titleLabel').setHtml(me.getTitle());
+            me.down('#titleSubLabel').setHtml('');
+        }
+    },
+
 
     whatAmI: function () {
         var is = '';

@@ -11,7 +11,6 @@ Ext.define('V2POC.view.project.RisksDataview', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -66,7 +65,13 @@ Ext.define('V2POC.view.project.RisksDataview', {
                                 }
                     )
                 }
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                newActiveItem.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+                newActiveItem.down('#titleSubLabel').setHtml(newActiveItem.getTitle());
+            }
+        }
     },
 
     getData: function () {

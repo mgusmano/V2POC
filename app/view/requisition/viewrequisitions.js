@@ -1,26 +1,20 @@
 Ext.define('V2POC.view.requisition.ViewRequisitions', {
     extend: 'Ext.Panel',
     xtype: 'viewrequisitions',
+
+    initialize: function () {
+        this.create();
+    },
+
+    create: function () {
+        this.getData();
+    },
+
     config: {
+        title: null,
         layout: 'vbox',
-        iconCls: 'void',
         items: [
-             {
-                 xtype: "toolbar",
-                 title: 'View Requisitions',
-                 items: [
-                    {
-                        iconCls: "list",
-                        ui: "plain",
-                        left: 0,
-                        listeners: {
-                            tap: function () {
-                                Ext.Viewport.toggleMenu("left");
-                            }
-                        }
-                    }
-                 ]
-             },
+            com.getHeader(),
             {
                 xtype: 'container',
                 layout: 'hbox',
@@ -30,6 +24,16 @@ Ext.define('V2POC.view.requisition.ViewRequisitions', {
 
                 ]
             }
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     }
 });

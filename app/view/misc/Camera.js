@@ -10,7 +10,6 @@ Ext.define('V2POC.view.misc.Camera', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
