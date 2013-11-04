@@ -2,6 +2,7 @@ Ext.define('V2POC.view.misc.TeamTest', {
     extend: 'Ext.Panel',
     xtype: 'teamtest',
     requires: [
+        //'Ext.data.Store'
     ],
     initialize: function () {
         this.create();

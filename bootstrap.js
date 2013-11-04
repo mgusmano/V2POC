@@ -760,6 +760,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "V2POC.view.Tomatos": [],
   "V2POC.view.base.ChildPanel": [],
   "V2POC.view.base.MenuButton": [],
+  "V2POC.view.home.Dashboard": [],
   "V2POC.view.misc.Buttons": [],
   "V2POC.view.misc.Camera": [],
   "V2POC.view.misc.Misc": [],
@@ -1745,6 +1746,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "V2POC.view.base.MenuButton": [
     "widget.menubutton"
+  ],
+  "V2POC.view.home.Dashboard": [
+    "widget.dashboard"
   ],
   "V2POC.view.misc.Buttons": [
     "widget.buttons"

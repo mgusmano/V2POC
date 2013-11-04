@@ -36,15 +36,23 @@ Ext.define('V2POC.com', {
 
     setMenu: function (items) {
         var menu = Ext.create("Ext.Menu", {
-            defaults: { xtype: "menubutton" },
             width: '265px',
             scrollable: 'vertical',
-            cls: 'mainmenu',
+            cls: 'mainmenu x-header-dark',
             layout: 'vbox',
-            //style: {
-            //    backgroundColor: 'green'
-            //},
-            items: items
+            style: {
+                backgroundColor: '#061f31'
+            },
+            items: [
+                { xtype: 'container', margin: '0 20 0 20', defaults: { xtype: "menubutton" }, items: items},
+                {
+                    xtype: 'container', margin: '0 20 0 20', 
+                    items: [
+                    ]
+                },
+            ]
+            
+            
         });
         Ext.Viewport.setMenu(menu, { side: 'left', reveal: true });
     },

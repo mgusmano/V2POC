@@ -3,8 +3,6 @@ Ext.define('V2POC.view.Main', {
     xtype: 'main',
     id: 'main',
     requires: [
-        //'Ext.TitleBar',
-        //'Ext.Video',
         'V2POC.view.base.ChildPanel'
     ],
 
@@ -12,12 +10,18 @@ Ext.define('V2POC.view.Main', {
         tabBarPosition: 'bottom',
         items: [
             {
+                xtype: 'childpanel', iconCls: 'home', title: 'home',
+                p: [
+                    { panel: 'dashboard', title: 'Dashboard' }
+                ]
+            },
+            {
                 xtype: 'childpanel', id: 'projectsID', iconCls: 'team', title: 'projects',
                 p: [
                     { panel: 'summary', title: 'Summary' },
                     { panel: 'team', title: 'Team' },
                     { panel: 'riskmatrix', title: 'Risks Matrix' },
-                    { panel: 'risksgrid', title: 'Risks Grid' },
+                    //{ panel: 'risksgrid', title: 'Risks Grid' },
                     { panel: 'risksdataview', title: 'All Risks' }
                 ]
             },

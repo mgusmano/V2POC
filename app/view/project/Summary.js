@@ -7,7 +7,6 @@ Ext.define('V2POC.view.project.Summary', {
     },
 
     create: function () {
-        this.getData();
     },
 
     config: {
@@ -68,7 +67,14 @@ Ext.define('V2POC.view.project.Summary', {
         listeners: {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {
                 var me = newActiveItem;
-                //com.setTitle(me);
+            },
+            show: function (me, eOpts) {
+            },
+            painted: function (element, eOpts) {
+                var me = this;
+                me.getData();
+
+                com.setTitle(me);
                 try {
                 }
                 catch (exception) {
@@ -87,7 +93,7 @@ Ext.define('V2POC.view.project.Summary', {
                 "loadManagement": true,
                 "loadPmtKpis": false,
                 "loadUrls": false,
-                "projectId": 97370,
+                "projectId": com.getProjectId(),
                 "rollUpThresholdId": 1,
                 "rollUpSubProjectIds": [1]
             }
@@ -102,9 +108,9 @@ Ext.define('V2POC.view.project.Summary', {
         $.ajax(com.ajaxObject(theUrl, theParms))
         .done(function (data) {
             Ext.getCmp('theDataSummary').setData(data);
-            com.setProjectId(data.projectId);
-            com.setProjectName(data.projectName);
-            com.setTitle(me);
+            //com.setProjectId(data.projectId);
+            //com.setProjectName(data.projectName);
+            //com.setTitle(me);
 
         })
         .fail(function (data) {

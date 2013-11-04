@@ -15,12 +15,15 @@ Ext.application({
 
     requires: [
         'Ext.MessageBox',
-        'Ext.Menu'
+        'Ext.Menu',
+        'Ext.data.Store'
     ],
 
     views: [
         'Main',
         'Tomatos',
+
+        'home.Dashboard',
 
         'base.MenuButton',
         'base.ChildPanel',

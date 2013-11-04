@@ -19,8 +19,8 @@ Ext.define('V2POC.view.requisition.ViewRequisitions', {
                 xtype: 'container',
                 layout: 'hbox',
                 items: [
-                    { xtype: 'container', html: '1' },
-                    { xtype: 'container', html: '2' }
+                    { xtype: 'container', html: '' },
+                    { xtype: 'container', html: '' }
 
                 ]
             }
