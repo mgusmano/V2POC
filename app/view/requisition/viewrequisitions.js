@@ -25,8 +25,12 @@ Ext.define('V2POC.view.requisition.ViewRequisitions', {
                 xtype: 'container',
                 layout: 'hbox',
                 items: [
-                    { xtype: 'container', html: '1' },
-                    { xtype: 'container', html: '2' }
+                    {
+                        xtype: 'container',
+                        html:
+                            '<img src="resources/images/award.png" alt="Smiley face" width="135" height="75" >' +
+                            '<div>04 Nov 2013 - The winner of the 2013 CEO\'s Award - top prize in the annual Performed by Schlumberger program - was announced on Friday, November 1.</div>' 
+                    }
 
                 ]
             }
