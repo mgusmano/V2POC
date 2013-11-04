@@ -12,7 +12,6 @@ Ext.define('V2POC.view.project.RisksGrid', {
 
     create: function () {
         this.down('grid').getTitleBar().hide();
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -35,7 +34,6 @@ Ext.define('V2POC.view.project.RisksGrid', {
                            // var r = '<div style="font-size:11px">' + record.data.riskSequence + '-' + record.data.riskName + '</div><div>line 2</div>';
                             var r = '<h1>hi</h1>';
                             return r;
-
                         }
                     },
                     { text: 'S', dataIndex: 'riskSeverity', width: 50 },
@@ -43,12 +41,21 @@ Ext.define('V2POC.view.project.RisksGrid', {
                     { text: 'R', dataIndex: 'riskScore', width: 50 }
                 ]
             }
-
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     },
 
     getData: function () {
-        var me1 = this;
+        var me = this;
         var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
         var theParms = { type: 1, projectId: 97370 };
         $.ajax(com.ajaxObject(theUrl, theParms))

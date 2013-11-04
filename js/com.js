@@ -2,7 +2,16 @@ Ext.define('V2POC.com', {
     singleton: true,
     alternateClassName: 'com',
 
+    requires: [
+    //    'V2POC.view.base.Header'
+    ],
+
     theTest: true,
+
+    config: {
+        projectId: null,
+        projectName: null
+    },
 
     ajaxUrl: function (theService, theMethod) {
         //return 'http://' + location.hostname + ':8095/' + 'api/' + theService + '/' + theMethod;
@@ -27,97 +36,119 @@ Ext.define('V2POC.com', {
 
     setMenu: function (items) {
         var menu = Ext.create("Ext.Menu", {
-            defaults: { xtype: "menubutton" },
-            //width: '80%',
             width: '265px',
             scrollable: 'vertical',
-            cls: 'mainmenu',
+            cls: 'mainmenu x-header-dark',
             layout: 'vbox',
-            //style: {
-            //    backgroundColor: 'green'
-            //},
-            items: items,
-
-
-            //items: [{ margin: "85 0 0 0", text: "Schedule", ui: "mainmenu", href: "#sessions", iconCls: "ico-schedule" }, { text: "Speakers", ui: "mainmenu", href: "#speakers", iconCls: "ico-speakers" }, { text: "Sponsors", ui: "mainmenu", href: "#sponsors", iconCls: "ico-sponsors" }, { text: "Maps", ui: "mainmenu", iconCls: "ico-maps", href: "#maps" }, { text: "Conference Activities", ui: "mainmenu", iconCls: "ico-activities", href: "#activities" }, { text: "More Info", ui: "mainmenu", iconCls: "ico-info", href: "#info" }, { xtype: "component", cls: "divider", html: "Social" }, { text: "@SamsungDevUS", ui: "mainmenu", href: "#feed", iconCls: "ico-feed" }, { text: "#sdc13", ui: "mainmenu", href: "#tweets", iconCls: "ico-twitter" }],
-
-
-
-
-            xitems: [
+            style: {
+                backgroundColor: '#061f31'
+            },
+            items: [
+                { xtype: 'container', margin: '0 20 0 20', defaults: { xtype: "menubutton" }, items: items},
                 {
-                    xtype: 'dataview',
-                    flex:1,
-                    //width: 216,
-                    //height: 300,
-                    listeners: {
-                        scope: this,
-                        itemtap: function (dataview, record, item, index, e, eOpts) {
-                            alert('hi');
-                            //var store = this.down('grid').store;
-                            //store.clearFilter();
-                            //store.filter("riskSeverity", record.data.severity);
-                            //store.filter("riskOccurrence", record.data.occurrence);
-                        }
-                    },
-                    singleSelect: true,
-                    //overItemCls: 'x-view-over',
-                    itemSelector: '.clickable',
-                    //emptyText: 'No data available',
-                    //deferInitialRefresh: false,
-
-                    store: {
-                        fields: ['severity', 'occurrence', 'count'],
-                        data: [
-                            {
-                                "severity": 1,
-                                "occurrence": 1,
-                                "count": 9
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 2,
-                                "count": 1
-                            },
-                            {
-                                "severity": 1,
-                                "occurrence": 3,
-                                "count": 0
-                            }
-                        ]
-                    },
-                    itemTpl: '<div class="clickable" style="color:#ff0000"> {severity} {occurrence} {count} </div>',
-
-                    cctpl: new Ext.XTemplate(
-                            '<tpl for=".">',
-                            '<div>{severity} is {occurrence} years old</div>',
-                            //'{[this.doVal(values.severity, values.occurrence, values.count)]}',
-                            '</tpl>'
-                        )
-                }
+                    xtype: 'container', margin: '0 20 0 20', 
+                    items: [
+                    ]
+                },
             ]
+            
+            
         });
         Ext.Viewport.setMenu(menu, { side: 'left', reveal: true });
     },
 
     getHeader: function () {
-        return  {
-            xtype: "toolbar",
+        return {
+            xtype: "container",
+            itemId: 'headerContainer',
             dock: 'top',
+            height: 50,
+            width: '100%',
+            margin: '0 0 0 0',
+            padding: '0 0 0 0',
+            cls: 'x-header-dark x-header',
+            style: {
+                backgroundColor: 'gray',
+                color: '#ffffff'
+            },
+            layout: 'hbox',
             items: [
                {
+                   xtype: 'button',
+                   margin: '10 0 0 5',
+                   width: 32,
                    iconCls: "list",
                    ui: "plain",
-                   left: 0,
+                   style: {
+                       //backgroundColor: 'gray',
+                       background: 'transparent',
+                       color: '#ffffff',
+                       padding: '0 0 0 0'
+                   },
                    listeners: {
                        tap: function () {
                            Ext.Viewport.toggleMenu("left");
                        }
                    }
+               },
+               {
+                   xtype: 'container',
+                   flex: 1,
+                   itemId: 'titleContainer',
+                   layout: 'vbox',
+                           doTitle: function (s) {
+                               this.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+                               this.down('#titleSubLabel').setHtml(s);
+                           },
+                        items: [
+                       {
+                           xtype: 'label',
+                           itemId: 'titleLabel',
+                           styleHtmlCls: 'titleLabel',
+                           styleHtmlContent: true
+                       },
+                       {
+                           xtype: 'label',
+                           itemId: 'titleSubLabel',
+                           styleHtmlCls: 'titleSubLabel',
+                           styleHtmlContent: true
+                       }
+                   ]
                }
+               //{
+               //    xtype: 'button',
+               //    width: 45,
+               //    iconCls: "more",
+               //    ui: "plain",
+               //    style: {
+               //        backgroundColor: 'gray',
+               //        color: '#ffffff'
+               //    },
+               //    listeners: {
+               //        tap: function () {
+               //            Ext.Viewport.toggleMenu("right");
+               //        }
+               //    }
+               //}
             ]
         }
     },
+
+    setTitle: function (me, message) {
+        if (com.getProjectId() != null) {
+            //me.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+            //me.down('#titleSubLabel').setHtml(me.getTitle());
+            me.down('#titleLabel').setHtml(me.getTitle());
+            me.down('#titleSubLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
+        }
+        else {
+            me.down('#titleLabel').setHtml(me.getTitle());
+            if (message != null) {
+                me.down('#titleSubLabel').setHtml(message);
+            }
+        }
+    },
+
 
     whatAmI: function () {
         var is = '';

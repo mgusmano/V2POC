@@ -9,7 +9,6 @@ Ext.define('V2POC.view.misc.TextArea', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
     },
 
     config: {
@@ -19,8 +18,6 @@ Ext.define('V2POC.view.misc.TextArea', {
             com.getHeader(),
                 {
                     xtype: 'textareafield',
-                    //label: 'Bio',
-                    //maxRows: 4,
                     flex: 1,
                     id: 'theTextArea',
                     name: 'bio',

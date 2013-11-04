@@ -1,17 +1,15 @@
 Ext.define('V2POC.view.misc.TeamTest', {
-    extend: 'Ext.Container',
+    extend: 'Ext.Panel',
     xtype: 'teamtest',
     requires: [
-        'Ext.dataview.DataView',
-        'Ext.data.Store'
+        //'Ext.data.Store'
     ],
-
     initialize: function () {
         this.create();
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
+        this.down('grid').getTitleBar().hide();
         this.getData();
     },
 
@@ -20,52 +18,56 @@ Ext.define('V2POC.view.misc.TeamTest', {
         layout: 'vbox',
         items: [
             com.getHeader(),
-                {
-                    xtype: 'dataview',
-                    margin: '5 5 5 5',
-                    id: 'theTeamTestDataview',
-                    flex: 1,
-                    itemTpl: new Ext.XTemplate(
-                        '<hr style="margin:10px 0px 10px 0px">',
-                        '<div class="teamRoot" style="display:table;width:100%">',
-                             '<div style="display:table-cell;text-align:left;font-weight:bold">{riskName}</div>',
-                             '<div pn="{phoneNumber}"  style="display:table-cell;text-align:right;font-weight:bold"><span class="teamSMS" pn="{phoneNumber}">text</span>&nbsp;&nbsp;&nbsp;<span class="teamCall" pn="{phoneNumber}">call</span></div>',
-                        '</div>'
-                    )
+            {
+                xtype: 'grid',
+                flex: 1,
+                store: Ext.create('Ext.data.Store', {
+                    fields: ['name', 'email', 'phone'],
+                    data: [
+                            { 'name': 'Lisa', "email": "lisa@simpsons.com", "phone": "555-111-1224" },
+                            { 'name': 'Bart', "email": "bart@simpsons.com", "phone": "555-222-1234" },
+                            { 'name': 'Homer', "email": "home@simpsons.com", "phone": "555-222-1244" },
+                            { 'name': 'Marge', "email": "marge@simpsons.com", "phone": "555-222-1254" }
+                        ]
+                }),
+                columns: [
+                    { text: 'Name', dataIndex: 'name', width: 200 },
+                    { text: 'Email', dataIndex: 'email', width: 250 },
+                    { text: 'Phone', dataIndex: 'phone', width: 200 }
+                ]
+            }
+        ],
+        listeners: {
+            scope: this,
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+
+                var me = newActiveItem;
+                com.setTitle(me);
+
+                try {
+                    var myContact = navigator.contacts.create({ "displayName": "Test User" });
+                    myContact.note = "This contact has a note.";
+
+                    var myVar = setInterval(function () {
+                        var b = Ext.getCmp('requisitionsID');
+                        var v = b.tab.getBadgeText();
+                        if (v === null) {
+                            v = 0;
+                        }
+                        theVal = parseInt(v);
+                        theVal = theVal + 1;
+                        b.tab.setBadgeText(theVal);
+                        navigator.notification.vibrate(2000);
+                        navigator.notification.beep(3);
+                        clearInterval(myVar);
+                    }, 10000);
                 }
-        ]
+                catch(exception) {
+                }
+            }
+        }
     },
 
     getData: function () {
-
-        var theData = [
-            { riskName: 'marc', riskScore: 25, phoneNumber: '847-331-2020' },
-            { riskName: 'nick', riskScore: 22, phoneNumber: '847-331-2022' },
-            { riskName: 'andy', riskScore: 20, phoneNumber: '847-331-2023' },
-        ];
-
-        var storeRisks = Ext.create('Ext.data.Store', {
-            fields: ['riskName', 'riskScore', 'phoneNumber'],
-            data: theData
-        });
-        Ext.getCmp('theTeamTestDataview').setStore(storeRisks);
     }
-});
-
-$(function () {
-
-    $('body').on('click', '.teamRoot .teamSMS', function () {
-        //debugger;
-        var pn = $(this).attr('pn');
-        //alert(pn);
-        document.location.href = 'SMS:' + pn + '?body=message %0D%0A here';
-    });
-
-    $('body').on('click', '.teamRoot .teamCall', function () {
-        //debugger;
-        var pn = $(this).attr('pn');
-        //alert(pn);
-        document.location.href = 'tel:' + pn;
-    });
-
 });

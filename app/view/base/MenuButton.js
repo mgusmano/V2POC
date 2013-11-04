@@ -4,6 +4,22 @@ Ext.define('V2POC.view.base.MenuButton', {
     config: {
         text: null,
         targetPanel: null,
+
+        //ui: "plain",
+        //style: {
+        //    //backgroundColor: 'gray',
+        //    background: 'transparent',
+        //    color: '#ffffff',
+        //    padding: '0 0 0 0'
+        //},
+
+        //labelStyle: {
+        //    //backgroundColor: 'gray',
+        //    background: 'transparent',
+        //    color: '#ffffff',
+        //    padding: '0 0 0 0'
+        //},
+
         //ui: 'plain',
         //labelCls: 'e-button-label',
         //cls: 'x-button-mainmenu',

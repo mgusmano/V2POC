@@ -7,68 +7,11 @@ Ext.define('V2POC.view.project.RiskMatrix', {
         'Ext.data.Store'
     ],
 
-    theColors: [
-        ['insignificant', 'low', 'low', 'low', 'medium'],
-        ['low', 'low', 'medium', 'medium', 'high'],
-        ['low', 'medium', 'medium', 'high', 'high'],
-        ['low', 'medium', 'high', 'high', 'extreme'],
-        ['medium', 'high', 'high', 'extreme', 'extreme']
-    ],
-
-    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
-    currColor: 'high', //'extreme',
-    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
-
-    updateFilter: function (rm) {
-        var store = Ext.getCmp('theRisksDataview2').getStore();
-
-        store.clearFilter();
-        store.filterBy(function (r) {
-            if (r.raw.riskSeverity === null) {
-                return false;
-            }
-            if (r.raw.riskOccurrence === null) {
-                return false;
-            }
-
-            var theRow = r.raw.riskSeverity - 1,
-                theColumn = r.raw.riskOccurrence - 1;
-
-            for (var item in rm.currentSelection) {
-                if (rm.currentSelection[item]) {
-                    if (rm.theColors[r.raw.riskOccurrence - 1][r.raw.riskSeverity - 1] == item) {
-                        return true;
-                    }
-                }
-            }
-
-
-            return false;
-        });
-
-        for (var item in rm.currentSelection) {
-            if (rm.currentSelection[item]) {
-                $('.matrix ul.row li.' + item).addClass('the-selected-' + item);
-                $('.matrix .filter li.' + item).addClass('the-selected-' + item);
-            } else {
-                $('.matrix ul.row li.' + item).removeClass('the-selected-' + item);
-                $('.matrix .filter li.' + item).removeClass('the-selected-' + item);
-            }
-        }
-    },
-
-
-    //constructor: function (config) {
-    //    this.initConfig(config);
-    //},
-
     initialize: function () {
-        //Ext.Viewport.on('orientationchange', 'handleOrientationChange', this);
         this.create();
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -78,9 +21,9 @@ Ext.define('V2POC.view.project.RiskMatrix', {
         items: [
             com.getHeader(),
 
-            { 
-                xtype: 'container', 
-                layout: 'hbox',
+            {
+                xtype: 'container',
+                layout: 'vbox',
                 flex: 1,
                 items: [
                     {
@@ -123,9 +66,6 @@ Ext.define('V2POC.view.project.RiskMatrix', {
                             }
                         },
 
-
-
-                       // margin: '5px 5px 5px 5px',
                         id: 'theRiskMatrix',
                         margin: '5 5 5 5',
                         height: 250,
@@ -188,7 +128,7 @@ Ext.define('V2POC.view.project.RiskMatrix', {
                             }
                         },
                         singleSelect: true,
-                            itemSelector: '.clickable',
+                        itemSelector: '.clickable',
                         itemTpl: new Ext.XTemplate(
                             '<hr style="margin:10px 0px 10px 0px">',
                             '<div style="display:table;width:100%">',
@@ -225,19 +165,70 @@ Ext.define('V2POC.view.project.RiskMatrix', {
 
                 ]
             }
-
-
-
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     },
 
+    theColors: [
+        ['insignificant', 'low', 'low', 'low', 'medium'],
+        ['low', 'low', 'medium', 'medium', 'high'],
+        ['low', 'medium', 'medium', 'high', 'high'],
+        ['low', 'medium', 'high', 'high', 'extreme'],
+        ['medium', 'high', 'high', 'extreme', 'extreme']
+    ],
+
+    clickableColors: ['insignificant', 'low', 'medium', 'high', 'extreme'],
+    currColor: 'high', //'extreme',
+    currentSelection: { insignificant: false, low: false, medium: false, high: true, extreme: true },
+
+    updateFilter: function (rm) {
+        var store = Ext.getCmp('theRisksDataview2').getStore();
+
+        store.clearFilter();
+        store.filterBy(function (r) {
+            if (r.raw.riskSeverity === null) {
+                return false;
+            }
+            if (r.raw.riskOccurrence === null) {
+                return false;
+            }
+
+            var theRow = r.raw.riskSeverity - 1,
+                theColumn = r.raw.riskOccurrence - 1;
+
+            for (var item in rm.currentSelection) {
+                if (rm.currentSelection[item]) {
+                    if (rm.theColors[r.raw.riskOccurrence - 1][r.raw.riskSeverity - 1] == item) {
+                        return true;
+                    }
+                }
+            }
 
 
+            return false;
+        });
 
-
+        for (var item in rm.currentSelection) {
+            if (rm.currentSelection[item]) {
+                $('.matrix ul.row li.' + item).addClass('the-selected-' + item);
+                $('.matrix .filter li.' + item).addClass('the-selected-' + item);
+            } else {
+                $('.matrix ul.row li.' + item).removeClass('the-selected-' + item);
+                $('.matrix .filter li.' + item).removeClass('the-selected-' + item);
+            }
+        }
+    },
 
     getData: function () {
-
         var me = this;
         var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetRiskBurndown';
         var theParms = { type: 1, projectId: 97370 };
@@ -251,14 +242,6 @@ Ext.define('V2POC.view.project.RiskMatrix', {
       
             });
             Ext.getCmp('theRisksDataview2').setStore(storeRisks);
-
-
-            //var storeMatrix = Ext.create('Ext.data.Store', {
-            //    fields: ['count', 'occurrence', 'severity'],
-            //    data: data.Matrix
-            //});
-            //Ext.getCmp('dashboardPortletRiskMatrix').setStore(storeMatrix);
-            //Ext.getCmp('theRiskData').refresh();
         })
         .fail(function (data) {
             throw data.status + '-' + data.statusText + ': ' + theUrl;

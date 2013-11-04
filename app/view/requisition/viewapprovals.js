@@ -7,7 +7,6 @@ Ext.define('V2POC.view.requisition.ViewApprovals', {
     },
 
     create: function () {
-        this.items.items[0].setTitle(this.getTitle());
         this.getData();
     },
 
@@ -15,31 +14,26 @@ Ext.define('V2POC.view.requisition.ViewApprovals', {
         title: null,
         layout: 'vbox',
         items: [
-             {
-                 xtype: "toolbar",
-                 title: 'View Approvals',
-                 items: [
-                    {
-                        iconCls: "list",
-                        ui: "plain",
-                        left: 0,
-                        listeners: {
-                            tap: function () {
-                                Ext.Viewport.toggleMenu("left");
-                            }
-                        }
-                    }
-                 ]
-             },
+            com.getHeader(),
             {
                 xtype: 'container',
                 layout: 'hbox',
                 items: [
-                    { xtype: 'container', html: '1' },
-                    { xtype: 'container', html: '2' }
+                    { xtype: 'container', html: '' },
+                    { xtype: 'container', html: '' }
 
                 ]
             }
-        ]
+        ],
+        listeners: {
+            activate: function (newActiveItem, me, oldActiveItem, eOpts) {
+                var me = newActiveItem;
+                com.setTitle(me);
+                try {
+                }
+                catch (exception) {
+                }
+            }
+        }
     }
 });
