@@ -37,6 +37,7 @@ Ext.application({
         'requisition.ViewRequisitions',
         'requisition.ViewApprovals',
 
+        'misc.Cover',
         'misc.TeamTest',
         'misc.Camera',
         'misc.Buttons',
@@ -64,15 +65,6 @@ Ext.application({
 
    // profiles: ['Tablet', 'Phone'],
 
-
-    launch: function() {
-        // Destroy the #appLoadingIndicator element
-        Ext.fly('appLoadingIndicator').destroy();
-
-        Ext.Viewport.bodyElement.on('resize', Ext.emptyFn, this, { buffer: 1 });
-
-        Ext.Viewport.on('orientationchange', function (me, orientation, width, height, eOpts) {
-
             //function alertDismissed() {
             //    // do something
             //};
@@ -82,7 +74,18 @@ Ext.application({
             //    alertDismissed,         // callback
             //    'orientation',            // title
             //    'Done'                  // buttonName
-            //);
+    //);
+
+    launch: function() {
+        Ext.fly('appLoadingIndicator').destroy();
+
+        Ext.Viewport.bodyElement.on('resize', Ext.emptyFn, this, { buffer: 1 });
+
+        Ext.Viewport.on('orientationchange', function (me, orientation, width, height, eOpts) {
+
+            //Ext.getCmp('reqCover').refresh();
+            //Ext.getCmp('coverCover').refresh();
+            Ext.getCmp('homeCover').refresh();
 
             if (orientation == 'portrait') {
                 dock = 'top';
@@ -97,9 +100,7 @@ Ext.application({
                 dock = 'left';
                 Ext.getCmp('main').setTabBar({ hidden: true });
            }
-            //alert(this.getItems().items[1]);
             Ext.getCmp('dashboardPortletRiskMatrix').getItems().items[1].getItems().items[0].setDocked(dock);
-
         });
 
 

@@ -49,7 +49,7 @@ Ext.define('V2POC.com', {
                     xtype: 'container', margin: '0 20 0 20', 
                     items: [
                     ]
-                },
+                }
             ]
             
             

@@ -49,7 +49,7 @@ Ext.define('V2POC.com', {
                     xtype: 'container', margin: '0 20 0 20', 
                     items: [
                     ]
-                },
+                }
             ]
             
             
@@ -134,7 +134,7 @@ Ext.define('V2POC.com', {
         }
     },
 
-    setTitle: function (me) {
+    setTitle: function (me, message) {
         if (com.getProjectId() != null) {
             //me.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
             //me.down('#titleSubLabel').setHtml(me.getTitle());
@@ -143,7 +143,9 @@ Ext.define('V2POC.com', {
         }
         else {
             me.down('#titleLabel').setHtml(me.getTitle());
-            me.down('#titleSubLabel').setHtml('');
+            if (message != null) {
+                me.down('#titleSubLabel').setHtml(message);
+            }
         }
     },
 

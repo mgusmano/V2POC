@@ -26,7 +26,11 @@ Ext.define('V2POC.view.project.Team', {
                 flex: 1,
                 itemTpl: new Ext.XTemplate(
                     '<div class="teamRoot" style="display:table;width:100%">',
-                            '<div style="display:table-cell;text-align:left;font-weight:bold;padding:0px 0px 20px 0px;">{riskName} {lastName}</div>',
+                            '<div style="display:table-cell;text-align:left;font-weight:bold;padding:0px 0px 0px 0px;">{riskName} {lastName}</div>',
+                    '</div>',
+
+                    '<div class="teamRoot" style="display:table;width:100%">',
+                            '<div style="display:table-cell;text-align:left;padding:0px 0px 20px 0px;">Engineer</div>',
                     '</div>',
                     '<div class="teamRoot" style="display:table;width:100%">',
                         '<div pn="{phoneNumber}"  style="display:table-cell;text-align:right;font-weight:bold">',
@@ -42,37 +46,12 @@ Ext.define('V2POC.view.project.Team', {
         ],
         listeners: {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {
-                debugger;
                 var me = newActiveItem;
                 com.setTitle(me);
                 try {
                 }
                 catch (exception) {
                 }
-
-
-                try {
-                    //var myContact = navigator.contacts.create({ "displayName": "Test User" });
-                    //myContact.note = "This contact has a note.";
-
-                    var myVar = setInterval(function () {
-                        var b = Ext.getCmp('requisitionsID');
-                        var v = b.tab.getBadgeText();
-                        if (v === null) {
-                            v = 0;
-                        }
-                        theVal = parseInt(v);
-                        theVal = theVal + 1;
-                        b.tab.setBadgeText(theVal);
-                        navigator.notification.vibrate(2000);
-                        navigator.notification.beep(3);
-                        clearInterval(myVar);
-                    }, 10000);
-                }
-                catch (exception) {
-                }
-
-
             }
         }
     },

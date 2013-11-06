@@ -15,101 +15,161 @@ Ext.define('V2POC.view.home.Dashboard', {
         layout: 'vbox',
         items: [
             com.getHeader(),
-            {
-                xtype: 'container',
-                margin: '5 0 0 0',
-                style: { textAlign: 'center', borderColor: 'red' },
-                html: "Today's News"
-            },
+            //{
+            //    xtype: 'container',
+            //    margin: '5 0 0 0',
+            //    style: { textAlign: 'center', borderColor: 'red' },
+            //    html: "Today's News"
+            //},
 
-            {
-                xtype: 'carousel',
-                flex: 1,
-                style: { textAlign: 'center', borderColor: 'red' },
-                border: 5,
-                margin: '5 5 5 5',
-                bufferSize: 2,
-                direction: 'horizontal',
-                items: [
-                    {
-                        xtype: 'container', border: 1, style: { backgroundColor: 'blue', color: 'white' },
-                        html: [
-                            '<div style="margin:15px 5px 5px 5px">',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
-                                      'Oilfield Review</br>Now Available on the iPad',
-                                    '</div>',
-                                '</div>',
-                                '</br>',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:left">',
-                                        'Download the Oilfield Review app in the App Store or on iTunes to access animation- and video-enhanced articles, as well as archived issues of this premier E&P technical journal.',
-                                    '</div>',
-                                '</div>',
-                            '</div>'
-                            ].join('')
-                    },
-                    {
-                        xtype: 'container', border: 1, style: { backgroundColor: 'green', color: 'white' },
-                        html: [
-                            '<div style="margin:15px 5px 5px 5px">',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
-                                      'Join us at OTC Brasil 2013',
-                                    '</div>',
-                                '</div>',
-                                '</br>',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:left">',
-                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
-                                    '</div>',
-                                '</div>',
-                            '</div>'
-                        ].join('')
-                    },
-                    {
-                        xtype: 'container', border: 1, style: { backgroundColor: 'red', color: 'white' },
-                        html: [
-                            '<div style="margin:15px 5px 5px 5px">',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
-                                      'Join us at OTC Brasil 2013',
-                                    '</div>',
-                                '</div>',
-                                '</br>',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:left">',
-                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
-                                    '</div>',
-                                '</div>',
-                            '</div>'
-                        ].join('')
-                    },
-                    {
-                        xtype: 'container', border: 1, style: { backgroundColor: 'yellow', color: 'black' },
-                        html: [
-                            '<div style="margin:15px 5px 5px 5px">',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
-                                      'Join us at OTC Brasil 2013',
-                                    '</div>',
-                                '</div>',
-                                '</br>',
-                                '<div style="display:table;width:100%">',
-                                    '<div style="display:table-cell;text-align:left">',
-                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
-                                    '</div>',
-                                '</div>',
-                            '</div>'
-                        ].join('')
-                    }
-                ]
-            },
+            //{
+            //    xtype: 'carousel',
+            //    flex: 1,
+            //    style: { textAlign: 'center', borderColor: 'red' },
+            //    border: 5,
+            //    margin: '5 5 5 5',
+            //    bufferSize: 2,
+            //    direction: 'horizontal',
+            //    items: [
+            //        {
+            //            xtype: 'container', border: 1, style: { backgroundColor: 'blue', color: 'white' },
+            //            html: [
+            //                '<div style="margin:15px 5px 5px 5px">',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:center;font-weight:bold">',
+            //                          'Oilfield Review</br>Now Available on the iPad',
+            //                        '</div>',
+            //                    '</div>',
+            //                    '</br>',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:left">',
+            //                            'Download the Oilfield Review app in the App Store or on iTunes to access animation- and video-enhanced articles, as well as archived issues of this premier E&P technical journal.',
+            //                        '</div>',
+            //                    '</div>',
+            //                '</div>'
+            //                ].join('')
+            //        },
+
+
+            //        {
+            //            xtype: 'container', border: 1, style: { backgroundColor: 'blue', color: 'white' },
+            //            html: [
+            //                '<img src="resources/images/award.png" alt="Smiley face" width="135" height="75" >' +
+            //                '<div>04 Nov 2013 - The winner of the 2013 CEO\'s Award - top prize in the annual Performed by Schlumberger program - was announced on Friday, November 1.</div>' 
+            //            ]
+            //        },
+
+
+            //        {
+            //            xtype: 'container', border: 1, style: { backgroundColor: 'green', color: 'white' },
+            //            html: [
+            //                '<div style="margin:15px 5px 5px 5px">',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:center;font-weight:bold">',
+            //                          'Join us at OTC Brasil 2013',
+            //                        '</div>',
+            //                    '</div>',
+            //                    '</br>',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:left">',
+            //                            'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+            //                        '</div>',
+            //                    '</div>',
+            //                '</div>'
+            //            ].join('')
+            //        },
+            //        {
+            //            xtype: 'container', border: 1, style: { backgroundColor: 'red', color: 'white' },
+            //            html: [
+            //                '<div style="margin:15px 5px 5px 5px">',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:center;font-weight:bold">',
+            //                          'Join us at OTC Brasil 2013',
+            //                        '</div>',
+            //                    '</div>',
+            //                    '</br>',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:left">',
+            //                            'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+            //                        '</div>',
+            //                    '</div>',
+            //                '</div>'
+            //            ].join('')
+            //        },
+            //        {
+            //            xtype: 'container', border: 1, style: { backgroundColor: 'yellow', color: 'black' },
+            //            html: [
+            //                '<div style="margin:15px 5px 5px 5px">',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:center;font-weight:bold">',
+            //                          'Join us at OTC Brasil 2013',
+            //                        '</div>',
+            //                    '</div>',
+            //                    '</br>',
+            //                    '<div style="display:table;width:100%">',
+            //                        '<div style="display:table-cell;text-align:left">',
+            //                            'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+            //                        '</div>',
+            //                    '</div>',
+            //                '</div>'
+            //            ].join('')
+            //        }
+            //    ]
+            //},
+
+
+		{
+		    xtype: 'cover',
+		    flex: 1,
+		    itemCls: 'my-cover-item',
+		    //These are just for demo purposes.
+		    id: 'homeCover',
+		    height:  300 ,
+		    width:  '100%' ,
+
+		    //height: (Ext.os.deviceType !== 'Phone')? 300: undefined,
+		    //width: (Ext.os.deviceType !== 'Phone')? 800: undefined,
+		    //end-demo
+		    itemTpl : [
+				'<div>',
+					//'<div class="dev">{firstName} {lastName}</div>',
+					//'<div class="company">{company}</div>',
+					'<div class="image"><tpl if="image"><img  src="{image}"></tpl></div>',
+				'</div>'
+		    ],
+		    store : {
+		        fields: ['firstName', 'lastName', 'company', 'image', 'url' ],
+		        data: [
+{ image: 'resources/images/BluePrint.png', url: 'http://hub.slb.com/news/you_and_your_career/2013_sep25_slp3_qa_stephanie_cox.aspx' },
+//{ image: 'resources/images/CEOAward.png', url: 'http://hub.slb.com/news/events/2013/2013_nov04_pbs_chairman_gold_award.aspx' },
+{ image: 'resources/images/GearingUp.png', url: 'http://hub.slb.com/news/hse/2013/2013_0ct30_global_journey_management.aspx' },
+{ image: 'resources/images/GoingGlobal.png', url: 'http://hub.slb.com/news/our_organization/areas_geomarkets/2013/2013_oct11_local_content.aspx' },
+//{ image: 'resources/images/GoldWinners.png', url: 'http://hub.slb.com/news/today/2013_sep12_today_pbs_gold_winners_announced.aspx' },
+//{ image: 'resources/images/GroupSymposia.png', url: 'http://hub.slb.com/news/events/2013/2013_sep23_group_symposia_results.aspx' },
+//{ image: 'resources/images/InTouch.png', url: 'http://hub.slb.com/news/resources/2013/2013_oct23_15_years_of_staying_intouch.aspx' },
+{ image: 'resources/images/InventionAwards.png', url: 'http://hub.slb.com/news/events/2013/2013_oct18_slb_invention_awards_2013_open_for_submissions.aspx' },
+//{ image: 'resources/images/JeffSpath.png', url: 'http://hub.slb.com/news/today/2013_oct2_jeff_spath_spe_prez.aspx' },
+//{ image: 'resources/images/NorthSeaReorg.png', url: 'http://hub.slb.com/news/our_organization/areas_geomarkets/2013/2013_oct03_north_sea_gm_reorg.aspx' },
+{ image: 'resources/images/StopTheJob.png', url: 'http://hub.slb.com/news/hse/hse_hotspot/2013_sep17_hotspot_stop_the_job.aspx' }
+//{ image: 'resources/images/Transformation.png', url: 'http://hub.slb.com/news/executive_messages/2013/2013_sept12_transformation.aspx' }
+		        ]
+		    },
+		    selectedIndex: 2,
+		    listeners:{
+		        itemdoubletap: function(){
+		            console.log('itemdbltap', arguments);
+		        },
+		        itemtap: function(cover, idx){
+		            console.log('itemtap', arguments);
+		        },
+		        scope: this
+		    }
+		},
 
             {
                 xtype: 'container',
                 margin: '5 5 0 5',
-                style: { textAlign: 'center', borderColor: 'red' },
+                style: { textAlign: 'center', xborderColor: 'red', xbackgroundColor: '#333333', xcolor: '#000000' },
                 html: "Most Recent Projects"
             },
 
@@ -128,24 +188,24 @@ Ext.define('V2POC.view.home.Dashboard', {
                         com.setProjectName(record.data.projectName);
                         Ext.getCmp('projectsID').setActiveItem('summary');
                         Ext.getCmp('main').setActiveItem(Ext.getCmp('projectsID'));
-                    },
+                    }
                     //keyup: this.onSearchKeyUp
                 },
                 variableHeights: true,
 
                 itemTpl: [
-                '<div style="display:table;width:100%">',
-                        '<div style="display:table-cell;text-align:left;font-weight:bold">Project:</div>',
-                '</div>',
-                '<div class="clickable" style="white-space:normal !important;font-size:16px;margin:5px 0px 5px 0px">{projectId} - {projectName}</div></br>',
-                '<div style="display:table;width:100%">',
-                        '<div style="display:table-cell;text-align:left;font-weight:bold">PM</div>',
-                        '<div style="display:table-cell;text-align:right;font-weight:bold">PC</div>',
-                '</div>',
-                '<div style="display:table;width:100%">',
-                        '<div style="display:table-cell;text-align:left">{projectManager}</div>',
-                        '<div style="display:table-cell;text-align:right"> {productChampion} </div>',
-                '</div>'
+                //'<div style="display:table;width:100%">',
+                //        '<div style="display:table-cell;text-align:left;font-weight:bold">Project:</div>',
+                //'</div>',
+                '<div class="clickable" style="white-space:normal !important;font-size:16px;margin:5px 0px 5px 0px">{projectId} - {projectName}</div>'
+                //'<div style="display:table;width:100%">',
+                //        '<div style="display:table-cell;text-align:left;font-weight:bold">PM</div>',
+                //        '<div style="display:table-cell;text-align:right;font-weight:bold">PC</div>',
+                //'</div>',
+                //'<div style="display:table;width:100%">',
+                //        '<div style="display:table-cell;text-align:left">{projectManager}</div>',
+                //        '<div style="display:table-cell;text-align:right"> {productChampion} </div>',
+                //'</div>'
                 ].join(''),
 
                 useSimpleItems: true,

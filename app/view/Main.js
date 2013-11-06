@@ -1,3 +1,45 @@
+var cover = Ext.create('V2POC.view.misc.Cover', {
+    itemCls: 'my-cover-item',
+    id: 'coverCover',
+    //These are just for demo purposes.
+    height: (Ext.os.deviceType !== 'Phone') ? 300 : undefined,
+    width: (Ext.os.deviceType !== 'Phone') ? 800 : undefined,
+    //end-demo
+    itemTpl: [
+        '<div>',
+            '<div class="dev">{firstName} {lastName}</div>',
+            '<div class="company">{company}</div>',
+            '<div class="image"><tpl if="image"><img  src="{image}"></tpl></div>',
+        '</div>'
+    ],
+    store: {
+        fields: ['firstName', 'lastName', 'company', 'image'],
+        data: [
+            { firstName: 'Tommy', lastName: 'Maintz', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Rob', lastName: 'Dougan', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Max', lastName: 'Fierro', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Ed', lastName: 'Spencer', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Jamie', lastName: 'Avins', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Aaron', lastName: 'Conran', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Dave', lastName: 'Kaneda', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Michael', lastName: 'Mullany', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Abraham', lastName: 'Elias', company: 'Sencha', image: 'resources/images/sencha.png' },
+            { firstName: 'Jay', lastName: 'Robinson', company: 'Sencha', image: 'resources/images/sencha.png' }
+        ]
+    },
+    selectedIndex: 2,
+    listeners: {
+        itemdoubletap: function () {
+            console.log('itemdbltap', arguments);
+        },
+        itemtap: function (cover, idx) {
+            console.log('itemtap', arguments);
+        },
+        scope: this
+    }
+});
+
+
 Ext.define('V2POC.view.Main', {
     extend: 'Ext.tab.Panel',
     xtype: 'main',
@@ -9,6 +51,11 @@ Ext.define('V2POC.view.Main', {
     config: {
         tabBarPosition: 'bottom',
         items: [
+
+
+
+
+
             {
                 xtype: 'childpanel', iconCls: 'home', title: 'home',
                 p: [
@@ -35,13 +82,14 @@ Ext.define('V2POC.view.Main', {
             {
                 xtype: 'childpanel', id: 'miscID', iconCls: 'favorites', title: 'misc',
                 p: [
+                    { panel: 'textarea', title: 'The TextArea' },
                     { panel: 'buttons', title: 'The Buttons' },
                     { panel: 'teamtest', title: 'The TeamTest' },
                     { panel: 'camera', title: 'The Camera' },
-                    { panel: 'textarea', title: 'The TextArea' },
                     { panel: 'test', title: 'The Test' }
                 ]
             }
+
 
             //{ xtype: 'tomatos' },
 

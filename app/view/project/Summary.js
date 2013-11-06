@@ -62,7 +62,16 @@ Ext.define('V2POC.view.project.Summary', {
                         ]
                     }
                 ]
-            }
+            },
+
+            {
+                text: 'Go To EMSPEED Application', xtype: "button", margin: '30 0 0 0', height: 25,
+                listeners: {
+                    tap: function () {
+                        var ref = window.open('http://mjguitester.azurewebsites.net/sites/97370/Portal.aspx', '_blank', 'location=no');
+                    }
+                }
+            },
         ],
         listeners: {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {

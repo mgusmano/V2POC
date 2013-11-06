@@ -17,6 +17,8 @@ Ext.define('V2POC.view.project.Risks', {
     },
 
     config: {
+
+ 
         title: null,
         layout: 'vbox',
         items: [
@@ -226,6 +228,7 @@ Ext.define('V2POC.view.project.Risks', {
                 ]
             }
         ]
+
     },
 
 

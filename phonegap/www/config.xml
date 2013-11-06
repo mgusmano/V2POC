@@ -8,6 +8,17 @@
         PhoneGap Team
     </author>
     <feature name="http://api.phonegap.com/1.0/device" />
+  
+  <!--
+    <feature name="StatusBar">
+        <param name="ios-package" onload="false" value="CDVStatusBar" />
+    </feature>
+    -->
+  
+  <gap:platform name="ios" />
+  <gap:platform name="android" />
+  
+  
     <preference name="phonegap-version" value="3.0.0" />
     <preference name="permissions" value="none" />
     <preference name="orientation" value="default" />
@@ -51,15 +62,13 @@
     <gap:plugin name="org.apache.cordova.inappbrowser" />
     <gap:plugin name="org.apache.cordova.console" />  
     <gap:plugin name="org.apache.cordova.device" />
-  
     <gap:plugin name="org.apache.cordova.dialogs" />
-  
     <gap:plugin name="org.apache.cordova.vibration" />
-  
     <gap:plugin name="org.apache.cordova.contacts" />
-  
     <gap:plugin name="com.phonegap.plugins.barcodescanner" /> 
-  
+  <!--
+    <gap:plugin name="com.phonegap.plugin.statusbar" />
+    -->
   
     <access origin="http://127.0.0.1*" />
     <access origin="http://placehold.it*" />

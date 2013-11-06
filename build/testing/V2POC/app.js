@@ -71338,7 +71338,340 @@ Ext.define('Ext.viewport.Viewport', {
 Ext.define("V2POC.view.base.ChildPanel",{extend: Ext.tab.Panel ,xtype:"childpanel",initialize:function(){this.create()},create:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.xtype=i[t].panel,n.iconCls="void",n.title=i[t].title,r.push(n);this.add(r)},config:{p:{},items:[],iconCls:"void",title:null,listeners:{activate:function(){for(var n,r=[],i=this.getP(),t=0;t<i.length;t++)n={},n.panel=i[t].panel,n.text=i[t].title,n.targetPanel=this,t===0&&(n.margin="90 0 0.7em 0"),r.push(n);com.setMenu(r)}},tabBar:{hidden:!0}}});
 //# sourceMappingURL=ChildPanel.min.js.map
 
-Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",id:"main",                                        config:{tabBarPosition:"bottom",items:[{xtype:"childpanel",iconCls:"home",title:"home",p:[{panel:"dashboard",title:"Dashboard"}]},{xtype:"childpanel",id:"projectsID",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Summary"},{panel:"team",title:"Team"},{panel:"riskmatrix",title:"Risks Matrix"},{panel:"risksgrid",title:"Risks Grid"},{panel:"risksdataview",title:"All Risks"}]},{xtype:"childpanel",id:"requisitionsID",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"Requisitions"},{panel:"viewapprovals",title:"Approvals"}]},{xtype:"childpanel",id:"miscID",iconCls:"favorites",title:"misc",p:[{panel:"buttons",title:"The Buttons"},{panel:"teamtest",title:"The TeamTest"},{panel:"camera",title:"The Camera"},{panel:"textarea",title:"The TextArea"},{panel:"test",title:"The Test"}]}]}});
+/**
+ * @class Ext.ux.Cover
+ * @extend Ext.DataView
+ *
+ * A Cover represents elements in a Store as visual elements in a Coverflow-like widget.
+ * @author Maximiliano Fierro
+ * @notes Inspired on zflow: http://css-vfx.googlecode.com/ By Charles Ying
+*/
+Ext.define('V2POC.view.misc.Cover', {
+    extend:  Ext.DataView ,
+    xtype: 'cover',
+
+    config:{
+       /**
+         * @cfg {Number} selectedIndex The idx from the Store that will be active first. Only one item can be active at a
+         * time
+         * @accessor
+         * @evented
+         */
+        selectedIndex: 0,
+
+        /**
+         * @cfg {String} itemCls
+         * A css class name to be added to each item element.
+         */
+        itemCls: '',
+
+        /**
+         * @cfg {Boolean} preventSelectionOnItemTap
+         * Prevent selection when item is tapped. This is false by default.
+         */
+        preventSelectionOnItemTap: false,
+
+        /**
+         * @cfg {Number} angle for cover background items
+         * This is the angle that not selected items are moved in space.
+         */
+        angle: 70,
+
+        /**
+         * @cfg {Boolean} set to true if you want a flat representation. Defaults to false so the
+         * coverflow remains 3d.
+         */
+        flat: false,
+
+        /**
+         * @cfg {Boolean} preventOrientationChange
+         * Prevent attaching refresh method to orientation change event on Ext.Viewport
+         */
+        preventOrientationChange: false,
+
+        //private
+        baseCls: 'ux-cover',
+        //private
+        itemBaseCls: 'ux-cover-item-inner',
+        //private
+        scrollable: null,
+        //private
+        orientation: undefined
+    },
+
+    offset: 0,
+
+    //override
+    initialize: function(){
+        //we need somehow to put the itemCls to the tpl wraper element 
+        this.innerItemCls = this.getItemCls();
+        if(this.innerItemCls) {
+            this.setItemCls(this.innerItemCls+'-wrap');
+        }
+
+        this.callParent();
+
+        this.element.on({
+            drag: 'onDrag',
+            dragstart: 'onDragStart',
+            dragend: 'onDragEnd',
+            scope: this
+        });
+
+        this.on({
+            painted: 'onPainted',
+            itemtap: 'doItemTap',
+            scope: this
+        });
+
+        if(!this.getPreventOrientationChange()){
+            //subscribe to orientation change on viewport
+            Ext.Viewport.on('orientationchange', this.refresh, this);
+        }
+
+        this.setItemTransformation = (this.getFlat())?this.setItemTransformFlat:this.setItemTransform3d;
+    },
+
+
+    getElementConfig: function(){
+        return {
+            reference: 'element',
+            children:[{
+                reference: 'innerElement',
+                className: 'ux-cover-scroller'
+            }]
+        };
+    },
+
+    applyFlat: function(flat) {
+        return (Ext.os.is('Android')? true : flat);
+    },
+
+    updateOrientation: function(newOrientation, oldOrientation) {
+        var baseCls = this.getBaseCls();
+        if(this.element && newOrientation != oldOrientation) {
+            this.element.removeCls(baseCls+'-'+oldOrientation);
+            this.element.addCls(baseCls+'-'+newOrientation);
+        }
+    },
+
+    applyItemTpl: function(config){
+        if(Ext.isArray(config)){
+            config = config.join("");
+        }
+        return new Ext.XTemplate('<div class="' + this.getItemBaseCls() + ' ' + this.getItemCls() + ' ">'+config+'</div>');
+    },
+
+    onPainted: function(){
+        this.refresh();
+    },
+
+    //private
+    getTargetEl: function(){
+        return this.innerElement;
+    },
+
+    onDragStart: function(){
+        this.getTargetEl().dom.style.webkitTransitionDuration = "0s";
+    },
+
+    onDrag: function(e){
+        var curr = this.getOffset(),
+            offset,
+            ln = this.getViewItems().length,
+            selectedIndex,
+            delta = (e.deltaX - e.previousDeltaX);
+
+        //slow down on border conditions
+        selectedIndex = this.getSelectedIndex();
+
+        if ((selectedIndex === 0 && e.deltaX > 0) || (selectedIndex === ln - 1 && e.deltaX < 0)) {
+            delta *= 0.5;
+        }
+
+        offset = curr + delta;
+
+        this.setOffset(offset, true);
+    },
+
+    onDragEnd: function(){
+        var idx = this.getSelectedIndex(),
+            x = - (idx * this.gap);
+        this.getTargetEl().dom.style.webkitTransitionDuration = "0.4s";
+        //this.setOffset(x);
+        this.applySelectedIndex(idx);
+    },
+
+    doItemTap: function(cover, index, item, evt){
+        if(!this.getPreventSelectionOnItemTap() && this.getSelectedIndex() !== index){
+            this.setSelectedIndex(index);
+        }
+    },
+
+    getSelectedIndex: function(){
+        var idx, ln;
+        if(this.isRendered()){
+            ln = this.getViewItems().length;
+            idx = - Math.round(this.getOffset() / this.gap);
+            this.selectedIndex = Math.min(Math.max(idx, 0),  ln - 1);
+        }
+        return this.selectedIndex;
+    },
+
+    applySelectedIndex: function(idx){
+        if(this.isRendered()){
+            this.updateOffsetToIdx(idx);
+            this.selectWithEvent(this.getStore().getAt(idx));
+        }else{
+            this.selectedIndex = idx;
+        }
+    },
+
+    updateOffsetToIdx: function(idx){
+        var ln = this.getViewItems().length,
+            offset;
+
+        idx = Math.min(Math.max(idx, 0), ln - 1);
+        offset= -(idx * this.gap);
+        this.setOffset(offset);
+    },
+
+    setOffset: function(offset){
+        var items = this.getViewItems(),
+            idx = 0,
+            l = items.length,
+            item;
+        this.offset = offset;
+        this.getTargetEl().dom.style.webkitTransform = "translate3d(" + offset + "px, 0, 0)";
+        for(;idx<l;idx++){
+            item = Ext.get(items[idx]);
+            this.setItemTransformation(item, idx, offset);
+        }
+    },
+
+    getOffset: function(){
+        return this.offset;
+    },
+
+    getBaseItemBox: function(containerBox){
+        var cH = containerBox.height,
+            cW = containerBox.width,
+            sizeFactor = (cW > cH) ? 0.68 : 0.52,
+            h, w;
+
+        h = w = Math.min(containerBox.width, containerBox.height) * sizeFactor;
+
+        return {
+            top: 40  ,
+            height: h * 1.5,
+            width: w,
+            left: (containerBox.width - w) / 2
+        };
+    },
+
+    setBoundaries: function(itemBox){
+        var w = itemBox.width;
+        if(this.getFlat()){
+            this.gap = w * 1.1;
+            this.threshold = this.gap / 3;
+            this.delta = w * 0.2;
+        } else {
+            this.gap = w / 3;
+            this.threshold = this.gap / 2;
+            this.delta = w * 0.4;
+        }
+    },
+
+    setItemTransformation: Ext.emptyFn,
+
+    setItemTransform3d: function(item, idx, offset){
+        var x = idx * this.gap,
+            ix = x + offset,
+            transf = "";
+        if(ix < this.threshold && ix >= - this.threshold){
+            transf = "translate3d("+x+"px, 0, 150px)";
+            this.selectedIndex = idx;
+        }else if(ix > 0){
+            transf = "translate3d("+(x+this.delta)+"px, 0, 0) rotateY(-"+this.getAngle()+"deg)";
+        }else{
+            transf = "translate3d("+(x-this.delta)+"px, 0, 0) rotateY("+this.getAngle()+"deg)";
+        }
+        item.dom.style.webkitTransform = transf;
+    },
+
+    setItemTransformFlat: function(item, idx, offset){
+        var x = idx * this.gap,
+            ix = x + offset,
+            transf = "";
+        if(ix < this.threshold && ix >= - this.threshold){
+            transf = "translate3d("+x+"px, 0, 150px)";
+            this.selectedIndex = idx;
+        }else if(ix > 0){
+            transf = "translate3d("+(x+this.delta)+"px, 0, 0)";
+        }else{
+            transf = "translate3d("+(x-this.delta)+"px, 0, 0)";
+        }
+        item.dom.style.webkitTransform = transf;
+    },
+
+
+    doRefresh: function(me){
+        var container = me.container,
+            items, idx = 0, l,
+            orientation = Ext.Viewport.getOrientation();
+
+        this.setOrientation(orientation);
+
+        this.callParent([me]);
+
+        items = container.getViewItems();
+        l = items.length;
+
+        this.itemBox = this.getBaseItemBox(this.element.getBox());
+        this.setBoundaries(this.itemBox);
+
+        for(;idx<l;idx++){
+            this.resizeItem(items[idx]);
+        }
+
+        this.setSelectedIndex(this.selectedIndex);
+    },
+
+    resizeItem: function(element){
+        var itemBox = this.itemBox,
+            item = Ext.get(element);
+
+        item.setBox(itemBox);
+        /**
+            itemBox has an extra long in height to avoid reflection opacity over other items
+            I need to create a wrapper element with same bg to avoid that issue.
+        */
+        item.down('.'+this.getItemBaseCls()).setBox({height: itemBox.height/1.5, width: itemBox.width});
+    },
+
+    //override
+    onStoreUpdate: function(store, record, newIndex, oldIndex) {
+        var me = this,
+            container = me.container,
+            item;
+        oldIndex = (typeof oldIndex === 'undefined') ? newIndex : oldIndex;
+
+        if (oldIndex !== newIndex) {
+            container.moveItemsToCache(oldIndex, oldIndex);
+            container.moveItemsFromCache([record]);
+        }
+        else {
+            item = container.getViewItems()[newIndex];
+            // Bypassing setter because sometimes we pass the same record (different data)
+            container.updateListItem(record, item);
+            me.resizeItem(item);
+
+        }
+    }
+});
+
+
+var cover=Ext.create("V2POC.view.misc.Cover",{itemCls:"my-cover-item",height:Ext.os.deviceType!=="Phone"?300:undefined,width:Ext.os.deviceType!=="Phone"?800:undefined,itemTpl:["<div>",'<div class="dev">{firstName} {lastName}<\/div>','<div class="company">{company}<\/div>','<div class="image"><tpl if="image"><img  src="{image}"><\/tpl><\/div>',"<\/div>"],store:{fields:["firstName","lastName","company","image"],data:[{firstName:"Tommy",lastName:"Maintz",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Rob",lastName:"Dougan",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Max",lastName:"Fierro",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Ed",lastName:"Spencer",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Jamie",lastName:"Avins",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Aaron",lastName:"Conran",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Dave",lastName:"Kaneda",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Michael",lastName:"Mullany",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Abraham",lastName:"Elias",company:"Sencha",image:"resources/images/sencha.png"},{firstName:"Jay",lastName:"Robinson",company:"Sencha",image:"resources/images/sencha.png"}]},selectedIndex:2,listeners:{itemdoubletap:function(){console.log("itemdbltap",arguments)},itemtap:function(){console.log("itemtap",arguments)},scope:this}});Ext.define("V2POC.view.Main",{extend: Ext.tab.Panel ,xtype:"main",id:"main",                                        config:{tabBarPosition:"bottom",items:[{title:"cover",iconCls:"favorites",layout:Ext.os.deviceType==="Phone"?"fit":{type:"vbox",pack:"center",align:"center"},items:[cover]},{xtype:"childpanel",iconCls:"home",title:"home",p:[{panel:"dashboard",title:"Dashboard"}]},{xtype:"childpanel",id:"projectsID",iconCls:"team",title:"projects",p:[{panel:"summary",title:"Summary"},{panel:"team",title:"Team"},{panel:"riskmatrix",title:"Risks Matrix"},{panel:"risksdataview",title:"All Risks"}]},{xtype:"childpanel",id:"requisitionsID",iconCls:"organize",title:"requisitions",p:[{panel:"viewrequisitions",title:"Requisitions"},{panel:"viewapprovals",title:"Approvals"}]},{xtype:"childpanel",id:"miscID",iconCls:"favorites",title:"misc",p:[{panel:"buttons",title:"The Buttons"},{panel:"teamtest",title:"The TeamTest"},{panel:"camera",title:"The Camera"},{panel:"textarea",title:"The TextArea"},{panel:"test",title:"The Test"}]}]}});
 //# sourceMappingURL=Main.min.js.map
 
 Ext.define('V2POC.view.Tomatos', {
@@ -71428,7 +71761,7 @@ Ext.define('V2POC.view.home.Dashboard', {
     },
 
     create: function () {
-
+        this.getData();
     },
 
     config: {
@@ -71438,35 +71771,297 @@ Ext.define('V2POC.view.home.Dashboard', {
             com.getHeader(),
             {
                 xtype: 'container',
-                layout: 'hbox',
+                margin: '5 0 0 0',
+                style: { textAlign: 'center', borderColor: 'red' },
+                html: "Today's News"
+            },
+
+            {
+                xtype: 'carousel',
+                flex: 1,
+                style: { textAlign: 'center', borderColor: 'red' },
+                border: 5,
+                margin: '5 5 5 5',
+                bufferSize: 2,
+                direction: 'horizontal',
                 items: [
                     {
-                        xtype: 'carousel',
-                        bufferSize: 2,
-                        direction: 'vertical',
-                        items: [
-                            { xtype: 'container', html: 'p1'},
-                            { xtype: 'container', html: 'p2'},
-                            { xtype: 'container', html: 'p3'},
-                            { xtype: 'container', html: 'p4'},
-                            { xtype: 'container', html: 'p5'}
-                        ]
-                    }
+                        xtype: 'container', border: 1, style: { backgroundColor: 'blue', color: 'white' },
+                        html: [
+                            '<div style="margin:15px 5px 5px 5px">',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
+                                      'Oilfield Review</br>Now Available on the iPad',
+                                    '</div>',
+                                '</div>',
+                                '</br>',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:left">',
+                                        'Download the Oilfield Review app in the App Store or on iTunes to access animation- and video-enhanced articles, as well as archived issues of this premier E&P technical journal.',
+                                    '</div>',
+                                '</div>',
+                            '</div>'
+                            ].join('')
+                    },
 
+
+                    {
+                        xtype: 'container', border: 1, style: { backgroundColor: 'blue', color: 'white' },
+                        html: [
+                            '<img src="resources/images/award.png" alt="Smiley face" width="135" height="75" >' +
+                            '<div>04 Nov 2013 - The winner of the 2013 CEO\'s Award - top prize in the annual Performed by Schlumberger program - was announced on Friday, November 1.</div>' 
+                        ]
+                    },
+
+
+                    {
+                        xtype: 'container', border: 1, style: { backgroundColor: 'green', color: 'white' },
+                        html: [
+                            '<div style="margin:15px 5px 5px 5px">',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
+                                      'Join us at OTC Brasil 2013',
+                                    '</div>',
+                                '</div>',
+                                '</br>',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:left">',
+                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+                                    '</div>',
+                                '</div>',
+                            '</div>'
+                        ].join('')
+                    },
+                    {
+                        xtype: 'container', border: 1, style: { backgroundColor: 'red', color: 'white' },
+                        html: [
+                            '<div style="margin:15px 5px 5px 5px">',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
+                                      'Join us at OTC Brasil 2013',
+                                    '</div>',
+                                '</div>',
+                                '</br>',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:left">',
+                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+                                    '</div>',
+                                '</div>',
+                            '</div>'
+                        ].join('')
+                    },
+                    {
+                        xtype: 'container', border: 1, style: { backgroundColor: 'yellow', color: 'black' },
+                        html: [
+                            '<div style="margin:15px 5px 5px 5px">',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:center;font-weight:bold">',
+                                      'Join us at OTC Brasil 2013',
+                                    '</div>',
+                                '</div>',
+                                '</br>',
+                                '<div style="display:table;width:100%">',
+                                    '<div style="display:table-cell;text-align:left">',
+                                        'Learn how we can help you produce hydrocarbons more efficiently and safely in today\'s dynamic, ever-changing deepwater conditions.',
+                                    '</div>',
+                                '</div>',
+                            '</div>'
+                        ].join('')
+                    }
                 ]
+            },
+
+            {
+                xtype: 'container',
+                margin: '5 5 0 5',
+                style: { textAlign: 'center', borderColor: 'red' },
+                html: "Most Recent Projects"
+            },
+
+            {
+                xtype: 'list',
+                ui: 'round',
+                height: 200,
+                margin: ' 0 0 0 0',
+                padding: '0 0 0 0',
+
+                pinHeaders: false,
+
+                listeners: {
+                    itemtap: function (list, index, target, record, e, eOpts) {
+                        com.setProjectId(record.data.projectId);
+                        com.setProjectName(record.data.projectName);
+                        Ext.getCmp('projectsID').setActiveItem('summary');
+                        Ext.getCmp('main').setActiveItem(Ext.getCmp('projectsID'));
+                    }
+                    //keyup: this.onSearchKeyUp
+                },
+                variableHeights: true,
+
+                itemTpl: [
+                '<div style="display:table;width:100%">',
+                        '<div style="display:table-cell;text-align:left;font-weight:bold">Project:</div>',
+                '</div>',
+                '<div class="clickable" style="white-space:normal !important;font-size:16px;margin:5px 0px 5px 0px">{projectId} - {projectName}</div></br>',
+                '<div style="display:table;width:100%">',
+                        '<div style="display:table-cell;text-align:left;font-weight:bold">PM</div>',
+                        '<div style="display:table-cell;text-align:right;font-weight:bold">PC</div>',
+                '</div>',
+                '<div style="display:table;width:100%">',
+                        '<div style="display:table-cell;text-align:left">{projectManager}</div>',
+                        '<div style="display:table-cell;text-align:right"> {productChampion} </div>',
+                '</div>'
+                ].join(''),
+
+                useSimpleItems: true,
+                //grouped: true,
+                emptyText: '<div style="margin-top: 20px; text-align: center">No Matching Items</div>'
+                //disableSelection: true
             }
+
         ],
         listeners: {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {
                 var me = newActiveItem;
-                com.setTitle(me);
+                com.setTitle(me, 'Welcome Marc');
                 try {
                 }
                 catch (exception) {
                 }
             }
         }
+    },
+
+    getData: function () {
+        var me = this;
+        var theUrl = 'http://' + location.hostname + ':8095/' + 'ProjectService.svc/json/GetProjects';
+        var theParms = {};
+        $.ajax(com.ajaxObject(theUrl, theParms))
+        .done(function (data) {
+            var storeProjects = Ext.create('Ext.data.Store', {
+                fields: ['projectId', 'projectName', 'projectManager', 'productChampion'],
+                data: data
+            });
+            me.down('list').setStore(storeProjects);
+        })
+        .fail(function (data) {
+            throw data.status + '-' + data.statusText + ': ' + theUrl;
+        });
+    },
+
+
+    //getData: function () {
+    //    var me = this;
+    //    debugger;
+    //    var projectStore = me.getStore();
+    //    me.down('list').setStore(projectStore);
+    //},
+
+    getStore: function () {
+        //check if a store has already been set
+        if (!this.store) {
+            //if not, create one
+            this.store = Ext.create('Ext.data.Store', {
+                //define the stores fields
+                fields: ['firstName', 'lastName'],
+
+                //sort the store using the lastname field
+                //sorters: 'lastName',
+
+                //group the store using the lastName field
+                //groupField: 'lastName',
+
+                //and give it some data
+                data: [
+                    { firstName: 'Tommy', lastName: 'Maintz' },
+                    { firstName: 'Rob', lastName: 'Dougan' },
+                    { firstName: 'Ed', lastName: 'Avins' },
+                    { firstName: 'Jamie', lastName: 'Avins' },
+                    { firstName: 'Dave', lastName: 'Dougan' },
+                    { firstName: 'Abraham', lastName: 'Elias' },
+                    { firstName: 'Jacky', lastName: 'Ngyuyen' },
+                    { firstName: 'Jay', lastName: 'Ngyuyen' },
+                    { firstName: 'Jay', lastName: 'Robinson' },
+                    { firstName: 'Rob', lastName: 'Avins' },
+                    { firstName: 'Ed', lastName: 'Dougan' },
+                    { firstName: 'Jamie', lastName: 'Poulden' },
+                    { firstName: 'Dave', lastName: 'Spencer' },
+                    { firstName: 'Abraham', lastName: 'Avins' },
+                    { firstName: 'Jacky', lastName: 'Avins' },
+                    { firstName: 'Rob', lastName: 'Kaneda' },
+                    { firstName: 'Ed', lastName: 'Elias' },
+                    { firstName: 'Tommy', lastName: 'Dougan' },
+                    { firstName: 'Rob', lastName: 'Robinson' }
+                ]
+            });
+        }
+
+        //return the store instance
+        return this.store;
+    },
+
+    /**
+     * Called when the search field has a keyup event.
+     *
+     * This will filter the store based on the fields content.
+     */
+    onSearchKeyUp: function (field) {
+        //get the store and the value of the field
+        var value = field.getValue(),
+            store = this.getStore();
+
+        //first clear any current filters on the store. If there is a new value, then suppress the refresh event
+        store.clearFilter(!!value);
+
+        //check if a value is set first, as if it isnt we dont have to do anything
+        if (value) {
+            //the user could have entered spaces, so we must split them so we can loop through them all
+            var searches = value.split(','),
+                regexps = [],
+                i, regex;
+
+            //loop them all
+            for (i = 0; i < searches.length; i++) {
+                //if it is nothing, continue
+                if (!searches[i]) continue;
+
+                regex = searches[i].trim();
+                regex = regex.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+
+                //if found, create a new regular expression which is case insenstive
+                regexps.push(new RegExp(regex.trim(), 'i'));
+            }
+
+            //now filter the store by passing a method
+            //the passed method will be called for each record in the store
+            store.filter(function (record) {
+                var matched = [];
+
+                //loop through each of the regular expressions
+                for (i = 0; i < regexps.length; i++) {
+                    var search = regexps[i],
+                        didMatch = search.test(record.get('firstName') + ' ' + record.get('lastName'));
+
+                    //if it matched the first or last name, push it into the matches array
+                    matched.push(didMatch);
+                }
+
+                return (regexps.length && matched.indexOf(true) !== -1);
+            });
+        }
+    },
+
+    /**
+     * Called when the user taps on the clear icon in the search field.
+     * It simply removes the filter form the store
+     */
+    onSearchClearIconTap: function () {
+        //call the clearFilter method on the store instance
+        this.getStore().clearFilter();
     }
+
+
+
 });
 
 Ext.define("V2POC.view.base.MenuButton",{extend: Ext.Button ,xtype:"menubutton",config:{text:null,targetPanel:null,panel:null,listeners:{tap:function(){Ext.Viewport.hideAllMenus();var n=this.getTargetPanel();n.setActiveItem(this.getPanel())}}}});
@@ -71950,22 +72545,23 @@ Ext.define('V2POC.view.project.RisksDataview', {
     }
 });
 
-Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div style="display:table;width:100%;margin:10px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">{projectId} &ndash; {projectName}<\/span><\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:25px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Parent:<\/span> {parentProjectId} &ndash; {parentProjectName} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Project Manager:<\/span> {projectManager} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Champion:<\/span> {productChampion} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Group: <\/span> {productGroupCode} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Updated: <\/span> {timeSpanFromLastUpdate} <\/div>',"<\/div>","<\/div>"]}]}],listeners:{activate:function(n){var me=n;try{}catch(t){}}}},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:97370,rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var t=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",i=this.getParams();$.ajax(com.ajaxObject(n,i)).done(function(n){Ext.getCmp("theDataSummary").setData(n);com.setProjectId(n.projectId);com.setProjectName(n.projectName);com.setTitle(t)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
+Ext.define("V2POC.view.project.Summary",{extend: Ext.Container ,xtype:"summary",initialize:function(){this.create()},create:function(){},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",id:"theDataSummary",margin:"10 10 10 10",tpl:['<div style="display:table;width:100%;margin:10px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">{projectId} &ndash; {projectName}<\/span><\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:25px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Parent:<\/span> {parentProjectId} &ndash; {parentProjectName} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Project Manager:<\/span> {projectManager} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Champion:<\/span> {productChampion} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Product Group: <\/span> {productGroupCode} <\/div>',"<\/div>","<\/div>",'<div style="display:table;width:100%;margin:15px 0px 0px 0px;">','<div style="display:table-row">','<div style="display:table-cell;text-align:left"><span style="font-weight:bold;">Updated: <\/span> {timeSpanFromLastUpdate} <\/div>',"<\/div>","<\/div>"]}]}],listeners:{activate:function(n){var me=n},show:function(){},painted:function(){var n=this;n.getData();com.setTitle(n);try{}catch(t){}}}},getParams:function(){return{filter:{loadAuditInfo:!0,loadBaseAttributes:!0,loadDfxKpis:!1,loadLevelInfo:!0,loadManagement:!0,loadPmtKpis:!1,loadUrls:!1,projectId:com.getProjectId(),rollUpThresholdId:1,rollUpSubProjectIds:[1]}}},getData:function(){var i=this,n="http://"+location.hostname+":8095/ProjectService.svc/json/GetProject",t=this.getParams();$.ajax(com.ajaxObject(n,t)).done(function(n){Ext.getCmp("theDataSummary").setData(n)}).fail(function(t){throw t.status+"-"+t.statusText+": "+n;})}});
 //# sourceMappingURL=Summary.min.js.map
 
-Ext.define("V2POC.view.project.Team",{extend: Ext.Container ,xtype:"team",                                                    initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"dataview",margin:"5 5 5 5",id:"theTeamTestDataview",flex:1,itemTpl:new Ext.XTemplate('<hr style="margin:10px 0px 10px 0px">','<div class="teamRoot" style="display:table;width:100%">','<div style="display:table-cell;text-align:left;font-weight:bold">{riskName}<\/div>','<div pn="{phoneNumber}"  style="display:table-cell;text-align:right;font-weight:bold"><span class="teamSMS" pn="{phoneNumber}">text<\/span>&nbsp;&nbsp;&nbsp;<span class="teamCall" pn="{phoneNumber}">call<\/span><\/div>',"<\/div>")}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}},getData:function(){var n=Ext.create("Ext.data.Store",{fields:["riskName","riskScore","phoneNumber"],data:[{riskName:"marc",riskScore:25,phoneNumber:"847-331-2020"},{riskName:"nick",riskScore:22,phoneNumber:"847-331-2022"},{riskName:"andy",riskScore:20,phoneNumber:"847-331-2023"}]});Ext.getCmp("theTeamTestDataview").setStore(n)}});$(function(){$("body").on("click",".teamRoot .teamSMS",function(){var n=$(this).attr("pn");document.location.href="SMS:"+n+"?body=message %0D%0A here"});$("body").on("click",".teamRoot .teamCall",function(){var n=$(this).attr("pn");document.location.href="tel:"+n})});
+Ext.define("V2POC.view.project.Team",{extend: Ext.Container ,xtype:"team",                                                    initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"dataview",margin:"15 5 5 5",id:"theTeamTestDataview",flex:1,itemTpl:new Ext.XTemplate('<div class="teamRoot" style="display:table;width:100%">','<div style="display:table-cell;text-align:left;font-weight:bold;padding:0px 0px 20px 0px;">{riskName} {lastName}<\/div>',"<\/div>",'<div class="teamRoot" style="display:table;width:100%">','<div pn="{phoneNumber}"  style="display:table-cell;text-align:right;font-weight:bold">','<span style="background-color:blue;color:white;padding:10px 10px 10px 10px;" class="teamEmail" em="{eMail}">email<\/span>&nbsp;&nbsp;&nbsp;','<span style="background-color:blue;color:white;padding:10px 10px 10px 10px;" class="teamSMS" pn="{phoneNumber}">text<\/span>&nbsp;&nbsp;&nbsp;','<span style="background-color:blue;color:white;padding:10px 10px 10px 10px;" class="teamCall" pn="{phoneNumber}">call<\/span>',"<\/div>","<\/div>",'<hr style="margin:20px 0px 5px 0px">')}],listeners:{activate:function(n,t){var t,i;t=n;com.setTitle(t);try{}catch(r){}try{i=setInterval(function(){var t=Ext.getCmp("requisitionsID"),n=t.tab.getBadgeText();n===null&&(n=0);theVal=parseInt(n);theVal=theVal+1;t.tab.setBadgeText(theVal);navigator.notification.vibrate(2e3);navigator.notification.beep(3);clearInterval(i)},1e4)}catch(r){}}}},getData:function(){var n=Ext.create("Ext.data.Store",{fields:["riskName","lastName","riskScore","phoneNumber","eMail"],data:[{riskName:"Marc",lastName:"Gusmano",riskScore:25,phoneNumber:"847-331-2020",eMail:"mgusmano@outlook.com"},{riskName:"Nick",lastName:"Gusmano",riskScore:22,phoneNumber:"847-331-2022",eMail:"mgusmano@outlook.com"},{riskName:"Andy",lastName:"Gusmano",riskScore:20,phoneNumber:"847-331-2023",eMail:"mgusmano@outlook.com"}]});Ext.getCmp("theTeamTestDataview").setStore(n)}});$(function(){$("body").on("click",".teamSMS",function(){var n=$(this).attr("pn");document.location.href="SMS:"+n+"?body=message %0D%0A here"});$("body").on("click",".teamCall",function(){var n=$(this).attr("pn");document.location.href="tel:"+n});$("body").on("click",".teamEmail",function(){var n=$(this).attr("em");document.location.href="mailto:"+n+"?subject=the subject&body=hello%0D%0Athere"})});
 //# sourceMappingURL=Team.min.js.map
 
-Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
-//# sourceMappingURL=ViewRequisitions.min.js.map
+Ext.define("V2POC.view.requisition.ViewRequisitions",{extend: Ext.Panel ,xtype:"viewrequisitions",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"fit",items:[{xtype:"cover",flex:1,itemCls:"my-cover-item",height:300,width:800,itemTpl:["<div>",'<div class="dev">{firstName} {lastName}<\/div>','<div class="company">{company}<\/div>','<div class="image"><tpl if="image"><img  src="{image}"><\/tpl><\/div>',"<\/div>"],store:{fields:["firstName","lastName","company","image"],data:[{firstName:"Tommy",lastName:"Maintz",company:"Sencha",image:"./images/sencha.png"},{firstName:"Rob",lastName:"Dougan",company:"Sencha",image:"./images/sencha.png"},{firstName:"Max",lastName:"Fierro",company:"Sencha",image:"./images/sencha.png"},{firstName:"Ed",lastName:"Spencer",company:"Sencha",image:"./images/sencha.png"},{firstName:"Jamie",lastName:"Avins",company:"Sencha",image:"./images/sencha.png"},{firstName:"Aaron",lastName:"Conran",company:"Sencha",image:"./images/sencha.png"},{firstName:"Dave",lastName:"Kaneda",company:"Sencha",image:"./images/sencha.png"},{firstName:"Michael",lastName:"Mullany",company:"Sencha",image:"./images/sencha.png"},{firstName:"Abraham",lastName:"Elias",company:"Sencha",image:"./images/sencha.png"},{firstName:"Jay",lastName:"Robinson",company:"Sencha",image:"./images/sencha.png"}]},selectedIndex:2,listeners:{itemdoubletap:function(){console.log("itemdbltap",arguments)},itemtap:function(){console.log("itemtap",arguments)},scope:this}}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
+//# sourceMappingURL=viewrequisitions.min.js.map
 
-Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",html:"1"},{xtype:"container",html:"2"}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
+Ext.define("V2POC.view.requisition.ViewApprovals",{extend: Ext.Panel ,xtype:"viewapprovals",initialize:function(){this.create()},create:function(){this.getData()},config:{title:null,layout:"vbox",items:[com.getHeader(),{xtype:"container",layout:"hbox",items:[{xtype:"container",html:""},{xtype:"container",html:""}]}],listeners:{activate:function(n,t){var t=n;com.setTitle(t);try{}catch(i){}}}}});
 //# sourceMappingURL=ViewApprovals.min.js.map
 
 Ext.define('V2POC.view.misc.TeamTest', {
     extend:  Ext.Panel ,
     xtype: 'teamtest',
     requires: [
+        //'Ext.data.Store'
     ],
     initialize: function () {
         this.create();
@@ -72344,7 +72940,8 @@ Ext.application({
 
                
                          
-                  
+                   
+                        
       
 
     views: [
@@ -72365,6 +72962,7 @@ Ext.application({
         'requisition.ViewRequisitions',
         'requisition.ViewApprovals',
 
+        'misc.Cover',
         'misc.TeamTest',
         'misc.Camera',
         'misc.Buttons',
@@ -86530,7 +87128,7 @@ Ext.define('V2POC.com', {
                     xtype: 'container', margin: '0 20 0 20', 
                     items: [
                     ]
-                },
+                }
             ]
             
             
@@ -86615,7 +87213,7 @@ Ext.define('V2POC.com', {
         }
     },
 
-    setTitle: function (me) {
+    setTitle: function (me, message) {
         if (com.getProjectId() != null) {
             //me.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
             //me.down('#titleSubLabel').setHtml(me.getTitle());
@@ -86624,7 +87222,9 @@ Ext.define('V2POC.com', {
         }
         else {
             me.down('#titleLabel').setHtml(me.getTitle());
-            me.down('#titleSubLabel').setHtml('');
+            if (message != null) {
+                me.down('#titleSubLabel').setHtml(message);
+            }
         }
     },
 

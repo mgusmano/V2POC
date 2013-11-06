@@ -70,6 +70,42 @@ Ext.define('V2POC.view.project.RisksDataview', {
             activate: function (newActiveItem, me, oldActiveItem, eOpts) {
                 newActiveItem.down('#titleLabel').setHtml(com.getProjectId() + '-' + com.getProjectName());
                 newActiveItem.down('#titleSubLabel').setHtml(newActiveItem.getTitle());
+
+
+                try {
+                    //var myContact = navigator.contacts.create({ "displayName": "Test User" });
+                    //myContact.note = "This contact has a note.";
+                    var myVar = setInterval(function () {
+                        clearInterval(myVar);
+                        var b = Ext.getCmp('requisitionsID');
+                        var v = b.tab.getBadgeText();
+                        if (v === null) {
+                            v = 0;
+                        }
+                        theVal = parseInt(v);
+                        theVal = theVal + 1;
+                        b.tab.setBadgeText(theVal);
+                        if (navigator.notification != undefined) {
+                            navigator.notification.vibrate(1000);
+                            navigator.notification.beep(1);
+                        }
+
+                        var data = [
+                            { grsNo: 'R497464', grsAmt: '$52,240', supplier: 'Hitachi', days: 3, remaining: 1, next: 'mwill', "phone": "555-111-1224" },
+                            { grsNo: 'R494652', grsAmt: '$360,053', supplier: 'Dassault', days: 4, remaining: 1, next: 'Nouaze1', "phone": "555-222-1234" },
+                            { grsNo: 'R492812', grsAmt: '$42', supplier: 'SHI International', days: 1, remaining: 1, next: 'Kishino', "phone": "555-222-1244" },
+                            { grsNo: 'R497464', grsAmt: '$100,000', supplier: 'Hitachi', days: 5, remaining: 1, next: 'MShah23', "phone": "281-513-7978" }
+                        ];
+                        Ext.getCmp('openGRS').setData(data);
+
+
+                    }, 4000);
+                }
+                catch (exception) {
+                }
+
+
+
             }
         }
     },
